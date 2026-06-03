@@ -55,7 +55,7 @@ Open WebUI served as a useful starting point, but its architecture — Svelte 4,
 | RAG Pipeline       | Basic vector search    | **12-module production RAG** (HyDE, query expansion, step-back, RRF fusion, rule-based + LLM reranking, CRAG, doc grading, evidence reconciliation, multi-hop) |
 | Search Integration | 10 providers           | **18 providers** including Naver, Exa, Kagi, Perplexity, Mojeek, SerpApi, Bocha                                                                                |
 | Model Support      | Standard OpenAI/Ollama | Standard + **reasoning models** (o1, o3, o4, GPT-5) with automatic payload adaptation                                                                          |
-| Security           | Basic auth             | **Enterprise-grade** — CSRF, RBAC, audit logging, SSRF protection, account lockout                                                                             |
+| Security           | Basic auth             | **Enterprise-grade** — CSRF, RBAC, audit logging, SSRF protection, account lockout, 7-layer AI security scanner pipeline, emergency stop |
 | Compliance         | None                   | **Korean AI Basic Act + FSC financial AI guidelines**                                                                                                          |
 | License            | BSD-3 (brand locked)   | **Apache 2.0** for all new code — modify freely                                                                                                                |
 
@@ -160,7 +160,15 @@ Aligned with the FSC's Seven Principles for AI in Finance (금융 AI 7대 원칙
 - **Role-Based Access Control (RBAC)** with granular permissions
 - **User group management** for organizational hierarchies
 - **Security event logging** for audit trails
-- **AI-specific threat protection** — defenses against prompt injection, data contamination, and model poisoning
+- **Emergency Stop** — One-click kill switch to immediately halt all AI interactions system-wide
+- **AI Security Scanner Pipeline** — Seven-layer defense against AI-specific threats:
+  - **Prompt Injection Scanner** — Detects and blocks injection attempts in user inputs
+  - **Jailbreak Scanner** — Identifies jailbreak and bypass attempts
+  - **PII Scanner** — Detects personal identifiable information with configurable masking modes
+  - **Toxicity Scanner** — Filters harmful content with customizable word lists
+  - **Secrets Scanner** — Prevents leakage of API keys, tokens, and credentials
+  - **Output Filter** — Scans and filters model responses for safety
+  - **LLM Scanner** — LLM-based classification for nuanced threat detection
 
 ---
 
@@ -170,6 +178,8 @@ Aligned with the FSC's Seven Principles for AI in Finance (금융 AI 7대 원칙
 
 - **Effortless Setup** — Docker, Kubernetes (kubectl, kustomize, helm), or pip install
 - **Multi-Provider LLM Support** — Ollama, OpenAI, Azure, Claude, Gemini, and any OpenAI-compatible API (LMStudio, GroqCloud, Mistral, OpenRouter)
+- **Channels** — Team-based group chat channels with access control and member management
+- **User Memories** — Persistent personal memories stored in vector DB for contextual personalization across conversations
 - **Responsive Design** — Seamless experience across Desktop, Laptop, and Mobile
 - **Progressive Web App (PWA)** — Native app-like experience on mobile with installable app manifest
 - **Full Markdown & LaTeX** — Rich rendering for technical content
@@ -268,11 +278,15 @@ BCGPT WebUI supports multiple embedding backends that can be switched dynamicall
 - **Image Generation** — AUTOMATIC1111, ComfyUI (local), or DALL-E (cloud)
 - **Many Models Conversations** — Chat with multiple models simultaneously
 - **Agent Workflows** — Define and run multi-step agent pipelines with DAG orchestration
+- **Pipelines** — Upload, configure, and manage filter pipelines for request/response processing
+- **Workspace** — Centralized management for agents, functions, knowledge bases, prompts, and tools
+- **Evaluations** — Arena mode with leaderboard, user feedback collection, and model comparison
 
 ### Administration & Compliance
 
 - **Role-Based Access Control** — Fine-grained permissions and user group management
 - **Multilingual (i18n)** — Full internationalization support with 53 locales and community translations
+- **Security Scanner Pipeline** — 7-layer AI threat defense (prompt injection, jailbreak, PII, toxicity, secrets, output filter, LLM scanner) with emergency stop
 - **Audit Dashboard** — Real-time monitoring dashboard with event statistics, severity breakdown, and compliance summary
 - **Audit Logs** — Searchable, filterable audit log viewer with pagination and time-range filtering
 - **Personal Data Tracking** — Dedicated view for personal data access records with subject and action details
