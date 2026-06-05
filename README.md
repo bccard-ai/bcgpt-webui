@@ -34,7 +34,7 @@ BCGPT WebUI applies these AI Native technologies end-to-end:
 
 > **Why open source?** We believe that powerful AI infrastructure should be accessible to everyone — not locked behind proprietary licenses. BC Card's internal open-moai platform proved that AI Native technologies — production-grade RAG, multi-agent orchestration, quality assurance — can dramatically improve AI answer quality at enterprise scale. By contributing these technologies to BCGPT WebUI under an open license, we enable anyone to access the same AI capabilities that power real financial services. Whether you're a startup building an AI-powered product, an enterprise outfitting internal services, or a researcher experimenting with agent architectures, BCGPT WebUI gives you the freedom to use, modify, and extend the platform without restrictions. Fork it, customize it, make it yours.
 
-![BCGPT WebUI Demo](./demo.gif)
+![BCGPT WebUI Demo](./demo.png)
 
 ---
 
@@ -55,7 +55,7 @@ Open WebUI served as a useful starting point, but its architecture — Svelte 4,
 | RAG Pipeline       | Basic vector search    | **12-module production RAG** (HyDE, query expansion, step-back, RRF fusion, rule-based + LLM reranking, CRAG, doc grading, evidence reconciliation, multi-hop) |
 | Search Integration | 10 providers           | **18 providers** including Naver, Exa, Kagi, Perplexity, Mojeek, SerpApi, Bocha                                                                                |
 | Model Support      | Standard OpenAI/Ollama | Standard + **reasoning models** (o1, o3, o4, GPT-5) with automatic payload adaptation                                                                          |
-| Security           | Basic auth             | **Enterprise-grade** — CSRF, RBAC, audit logging, SSRF protection, account lockout, 7-layer AI security scanner pipeline, emergency stop |
+| Security           | Basic auth             | **Enterprise-grade** — CSRF, RBAC, audit logging, SSRF protection, account lockout, 7-layer AI security scanner pipeline, emergency stop                       |
 | Compliance         | None                   | **Korean AI Basic Act + FSC financial AI guidelines**                                                                                                          |
 | License            | BSD-3 (brand locked)   | **Apache 2.0** for all new code — modify freely                                                                                                                |
 
@@ -88,15 +88,6 @@ BCGPT WebUI features a purpose-built **Agent Module** that goes far beyond simpl
   - **Document Grading** — Assesses source document relevance and quality
   - **Entailment Scoring** — Measures logical consistency between claims and evidence
   - Weighted overall quality score (grounding 40%, document quality 20%, entailment 40%)
-
-### Human-in-the-Loop Handoff
-
-Enterprise deployments need human oversight. BCGPT's **Handoff** feature enables:
-
-- Seamless escalation from AI agent to human operator mid-conversation
-- Configurable notification channels (email, webhook)
-- Full chat snapshot preservation for context continuity
-- Status tracking and resolution workflow
 
 ### Extended Web Search (18 Providers)
 
@@ -141,7 +132,7 @@ Effective January 22, 2026 — the Framework Act on the Development of Artificia
 
 - **AI Transparency Banner** — Configurable disclosure that responses are AI-generated, satisfying Article 31 content labeling requirements for generative AI services
 - **Advance User Notification** — Users are informed they are interacting with AI, meeting the advance notice obligation for generative AI operators
-- **Human-in-the-Loop Handoff** — Seamless escalation from AI to human operators, satisfying the human oversight mechanism requirement for high-impact AI (Article 34)
+- **Emergency Stop** — One-click system-wide halt of all AI interactions, satisfying the emergency control requirement for high-impact AI (Article 34)
 - **Quality Pipeline** — Four-stage answer verification (claim grounding, document grading, entailment scoring) supports the safety and reliability measures required under Articles 33-35
 
 #### Financial Sector AI Guidelines (금융분야 AI 가이드라인)
@@ -178,7 +169,6 @@ Aligned with the FSC's Seven Principles for AI in Finance (금융 AI 7대 원칙
 
 - **Effortless Setup** — Docker, Kubernetes (kubectl, kustomize, helm), or pip install
 - **Multi-Provider LLM Support** — Ollama, OpenAI, Azure, Claude, Gemini, and any OpenAI-compatible API (LMStudio, GroqCloud, Mistral, OpenRouter)
-- **Channels** — Team-based group chat channels with access control and member management
 - **User Memories** — Persistent personal memories stored in vector DB for contextual personalization across conversations
 - **Responsive Design** — Seamless experience across Desktop, Laptop, and Mobile
 - **Progressive Web App (PWA)** — Native app-like experience on mobile with installable app manifest
@@ -278,7 +268,6 @@ BCGPT WebUI supports multiple embedding backends that can be switched dynamicall
 - **Image Generation** — AUTOMATIC1111, ComfyUI (local), or DALL-E (cloud)
 - **Many Models Conversations** — Chat with multiple models simultaneously
 - **Agent Workflows** — Define and run multi-step agent pipelines with DAG orchestration
-- **Pipelines** — Upload, configure, and manage filter pipelines for request/response processing
 - **Workspace** — Centralized management for agents, functions, knowledge bases, prompts, and tools
 - **Evaluations** — Arena mode with leaderboard, user feedback collection, and model comparison
 
@@ -292,7 +281,6 @@ BCGPT WebUI supports multiple embedding backends that can be switched dynamicall
 - **Personal Data Tracking** — Dedicated view for personal data access records with subject and action details
 - **Anomaly Detection** — Automated detection of suspicious activities with severity classification (critical, high, medium, low)
 - **Audit Settings** — Configurable logging levels, retention policies, and one-click purge controls
-- **Human Handoff** — Escalate AI conversations to human operators with full context
 - **AI Transparency** — Configurable disclosure banners for AI-generated content (AI Basic Act Article 31)
 - **Regulatory Compliance** — Aligned with Korean AI Basic Act (Law No. 20676) and FSC financial AI guidelines
 
