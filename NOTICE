@@ -1,0 +1,41 @@
+BCGPT WebUI NOTICE
+==================
+
+Copyright 2026 BC Card. All rights reserved.
+
+This product includes software developed at BC Card
+(https://github.com/bccard-ai/bcgpt-webui).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+
+Fork Attribution
+----------------
+
+This software is a fork of Open WebUI version 0.6.0, an open-source project
+originally created and maintained by Timothy Jaeryang Baek.
+
+    Original Repository: https://github.com/open-webui/open-webui
+    Original Author:     Timothy Jaeryang Baek
+    Original License:    BSD 3-Clause License
+
+The portions of this software derived from Open WebUI v0.6.0 are third-party
+components licensed under the BSD 3-Clause License. Those components retain
+their original copyright and license notices as required by the license terms.
+
+
+License Summary
+---------------
+
+  Component                          License
+  ─────────────────────────────────  ──────────────────────────
+  Modifications and new code         Apache License 2.0
+    by BC Card
+  Original Open WebUI v0.6.0 code    BSD 3-Clause License
+    by Timothy Jaeryang Baek
+
+See the LICENSE file for the full license texts.
