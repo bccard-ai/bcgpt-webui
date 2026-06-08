@@ -420,6 +420,7 @@ export HF_HUB_OFFLINE=1
 | Backend  | Python       | 3.11+       |
 | Backend  | FastAPI      | 0.136       |
 | Backend  | Pydantic     | 2.13        |
+| Backend  | LangChain    | 1.3.x       |
 | Testing  | Vitest       | 4.x         |
 | Testing  | Cypress      | 15.x        |
 | Linting  | ESLint       | 10.x        |
