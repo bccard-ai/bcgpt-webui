@@ -454,7 +454,7 @@ This means you can:
 - ✅ **Rebrand** — Use under your own brand name for your own deployments
 - ✅ **Patent grant** — Automatic patent license from BC Card contributors
 
-No brand lock-in. No attribution requirements beyond the license notice. No restrictions on how you use it.
+No brand lock-in. For BC Card's Apache 2.0 code, no attribution requirements beyond the license notice. No restrictions on how you use it.
 
 ### Original Open WebUI Code — BSD 3-Clause License
 
