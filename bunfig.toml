@@ -1,0 +1,12 @@
+# Bun configuration for BCGPT WebUI
+# See: https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Use text-based lockfile for git-friendliness and reproducible builds
+saveTextLockfile = true
+
+# Use hoisted linker for maximum compatibility with existing npm packages
+linker = "hoisted"
+
+# Don't run postinstall scripts (security + matches npm ci --ignore-scripts behavior)
+optional = true

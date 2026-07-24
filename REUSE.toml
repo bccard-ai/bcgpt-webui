@@ -1,0 +1,164 @@
+# REUSE.toml — BCGPT WebUI File-Level License Identification
+# REUSE Specification v3.3 (https://reuse.software/spec-3.3/)
+#
+# All source code in this project is licensed under Apache-2.0.
+# See NOTICE for fork attribution to Open WebUI and third-party components.
+
+version = 1
+
+# ==============================================================
+# Backend source code — Apache-2.0
+# ==============================================================
+
+[[annotations]]
+path = ["backend/bcgpt/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ==============================================================
+# Frontend source code — Apache-2.0
+# ==============================================================
+
+[[annotations]]
+path = ["src/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ==============================================================
+# Static assets — Apache-2.0
+# ==============================================================
+
+[[annotations]]
+path = ["static/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ==============================================================
+# Configuration & build files — CC0-1.0
+# ==============================================================
+
+[[annotations]]
+path = [
+    "pyproject.toml",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "svelte.config.js",
+    "vite.config.ts",
+    "tailwind.config.ts",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "eslint.config.*",
+    "prettier.config.*",
+    "vitest.config.*",
+    "playwright.config.*",
+    "cypress.config.*",
+    "i18next.config.*",
+    "hatch_build.py",
+    "Dockerfile",
+    "docker-compose*.yml",
+    ".env*",
+    ".gitignore",
+    ".gitattributes",
+    ".dockerignore",
+    ".prettierignore",
+    ".prettierrc",
+    ".npmrc",
+    ".lintstagedrc.*",
+    ".lighthouserc.*",
+    ".husky/**",
+    "Caddyfile*",
+    "Makefile",
+    "alembic.ini",
+    "uv.lock",
+    "bun.lock",
+    "bunfig.toml",
+    "backend/requirements.txt",
+]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# CI/CD pipelines
+[[annotations]]
+path = [".github/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Kubernetes Helm charts
+[[annotations]]
+path = ["kubernetes/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Build scripts
+[[annotations]]
+path = [
+    "scripts/**",
+    "*.sh",
+    "backend/*.sh",
+    "backend/dev.sh",
+    "run-compose.sh",
+    "run.sh",
+    "update_ollama_models.sh",
+]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Test config & fixtures
+[[annotations]]
+path = ["cypress/**", "test/**"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Documentation
+[[annotations]]
+path = [
+    "docs/**",
+    "CHANGELOG.md",
+    "INSTALLATION.md",
+    "ARTICLE.md",
+    "LICENSE_NOTICE_REVIEW.md",
+    "README.md",
+    "NOTICE",
+]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Demo and misc root files
+[[annotations]]
+path = ["demo.png", "qr_generator.py", "stats.html"]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Internal project plans & tooling state
+[[annotations]]
+path = [
+    ".omo/**",
+    ".sisyphus/**",
+    ".omc/**",
+    "backend/.omc/**",
+    "backend/.sisyphus/**",
+]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Remaining untracked files
+[[annotations]]
+path = [
+    "backend/.dockerignore",
+    "backend/.gitignore",
+    "backend/start_windows.bat",
+    "test/test_files/**",
+]
+SPDX-FileCopyrightText = "2026 BC Card AI Team"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ==============================================================
+# Third-party assets
+# ==============================================================
+
+# BAAI/bge-m3 embedding model weights — MIT
+[[annotations]]
+path = ["backend/models/**"]
+SPDX-FileCopyrightText = "2023 Beijing Academy of Artificial Intelligence (BAAI)"
+SPDX-License-Identifier = "MIT"

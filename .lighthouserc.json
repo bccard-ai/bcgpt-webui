@@ -1,0 +1,16 @@
+{
+	"ci": {
+		"collect": {
+			"startServerCommand": "bun run preview",
+			"startServerReadyPattern": "Local:",
+			"url": ["http://localhost:4173/"]
+		},
+		"assert": {
+			"assertions": {
+				"categories:performance": "warn",
+				"categories:accessibility": "warn",
+				"categories:best-practices": "warn"
+			}
+		}
+	}
+}

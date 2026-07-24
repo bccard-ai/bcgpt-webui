@@ -1,0 +1,158 @@
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentColor);
+	}
+}
+
+@layer base {
+	html,
+	pre {
+		font-family:
+			-apple-system, BlinkMacSystemFont, 'Inter', ui-sans-serif, system-ui, 'Segoe UI', Roboto,
+			Ubuntu, Cantarell, 'Noto Sans', sans-serif, 'Helvetica Neue', Arial, 'Apple Color Emoji',
+			'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+	}
+
+	pre {
+		white-space: pre-wrap;
+	}
+
+	button {
+		@apply cursor-pointer;
+	}
+
+	input::placeholder,
+	textarea::placeholder {
+		color: theme(--color-gray-400);
+	}
+}
+
+@custom-variant hover (&:hover);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   shadcn-svelte design tokens — Phase 1 foundation
+   ───────────────────────────────────────────────────────────────────────────
+   OKLCH semantic scale. `:root` = light defaults, `.dark` overrides. These
+   COEXIST with the legacy gray scale still loaded via `@config` above — every
+   existing `bg-gray-*` / `text-gray-*` keeps resolving unchanged. The single
+   `--primary` deliberately promotes bcgpt's existing blue link lineage into a
+   rationed accent (plan: "research-instrument" direction). Radius scale is NOT
+   overridden here on purpose — collapsing rounded-* is a deliberate Phase 1.2
+   codemod, not a silent global shift. */
+:root {
+	--radius: 0.5rem;
+
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.546 0.215 263);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.58 0.22 27);
+	--destructive-foreground: oklch(0.985 0 0);
+	--border: oklch(0.9 0 0);
+	--input: oklch(0.9 0 0);
+	--ring: oklch(0.546 0.215 263);
+
+	/* Chart + status palette (admin dashboard). Cohesive with --primary blue. */
+	--chart-1: oklch(0.546 0.215 263);
+	--chart-2: oklch(0.7 0.15 170);
+	--chart-3: oklch(0.75 0.16 70);
+	--chart-4: oklch(0.6 0.2 300);
+	--chart-5: oklch(0.65 0.2 20);
+	--success: oklch(0.72 0.17 155);
+	--success-foreground: oklch(0.985 0 0);
+	--warning: oklch(0.78 0.15 70);
+	--warning-foreground: oklch(0.205 0 0);
+}
+
+.dark {
+	--background: oklch(0.07 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.07 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.09 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.6 0.2 263);
+	--primary-foreground: oklch(0.145 0 0);
+	--secondary: oklch(0.16 0 0);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.16 0 0);
+	--muted-foreground: oklch(0.65 0 0);
+	--accent: oklch(0.16 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.65 0.21 25);
+	--destructive-foreground: oklch(0.985 0 0);
+	--border: oklch(0.16 0 0);
+	--input: oklch(0.16 0 0);
+	--ring: oklch(0.6 0.2 263);
+
+	--chart-1: oklch(0.6 0.2 263);
+	--chart-2: oklch(0.72 0.14 170);
+	--chart-3: oklch(0.78 0.15 70);
+	--chart-4: oklch(0.65 0.19 300);
+	--chart-5: oklch(0.68 0.19 20);
+	--success: oklch(0.7 0.16 155);
+	--success-foreground: oklch(0.985 0 0);
+	--warning: oklch(0.78 0.15 70);
+	--warning-foreground: oklch(0.205 0 0);
+}
+
+/* Map the raw vars to Tailwind v4 theme tokens so utilities generate:
+   `bg-primary`, `text-primary-foreground`, `border-border`, `ring-ring`,
+   `bg-destructive`, … `inline` resolves the var() references at build time,
+   so flipping `--background` under `.dark` retints every utility at once. */
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+}

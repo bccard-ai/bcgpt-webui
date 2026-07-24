@@ -1,0 +1,28 @@
+<script lang="ts">
+	/**
+	 * Merge branches icon component.
+	 * @param { string } [className] - CSS class for the SVG element.
+	 * @param { string } [strokeWidth] - Stroke width for the SVG paths.
+	 */
+	interface Props {
+		className?: string;
+		strokeWidth?: string;
+	}
+
+	let { className = 'w-4 h-4', strokeWidth = '1.5' }: Props = $props();
+</script>
+
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	fill="none"
+	viewBox="0 0 24 24"
+	stroke-width={strokeWidth}
+	stroke="currentColor"
+	class={className}
+>
+	<path
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		d="M8 8v8m0-8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm6-2a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 0h-1a5 5 0 0 1-5-5v-.5"
+	/>
+</svg>

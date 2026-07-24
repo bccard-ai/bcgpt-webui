@@ -1,0 +1,2 @@
+import{H as v,I as o,J as y,K as f,N as l,O as m,P as p,Q as i,S as T,R}from"./wmDFjFr_.js";import{B as A}from"./Dhm_xSnn.js";function E(d,_,e){var s;o&&(s=R,y());var r=new A(d);v(()=>{var a=_()??null;if(o){var h=l(s),c=h===T,u=a!==null;if(c!==u){var t=m();p(t),r.anchor=t,i(!1),r.ensure(a,a&&(n=>e(n,a))),i(!0);return}}r.ensure(a,a&&(n=>e(n,a)))},f)}export{E as c};
+//# sourceMappingURL=CjUO-CEe.js.map

@@ -1,0 +1,145 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/bcgpt/bcgpt
+  tag: main
+  pullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8090
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: bcgpt.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: bcgpt-tls
+  #    hosts:
+  #      - bcgpt.local
+
+persistence:
+  enabled: true
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+  existingClaim: ""
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+env:
+  BCGPT_AUTH: "True"
+  OLLAMA_BASE_URL: ""
+  OPENAI_API_BASE_URL: ""
+  RAG_EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  RAG_RERANKING_MODEL: ""
+  WHISPER_MODEL: "base"
+  SENTENCE_TRANSFORMERS_HOME: "/app/backend/data/cache/embedding/models"
+  WHISPER_MODEL_DIR: "/app/backend/data/cache/whisper/models"
+  TIKTOKEN_CACHE_DIR: "/app/backend/data/cache/tiktoken"
+  HF_HOME: "/app/backend/data/cache/embedding/models"
+  SCARF_NO_ANALYTICS: "true"
+  DO_NOT_TRACK: "true"
+  ANONYMIZED_TELEMETRY: "false"
+
+secrets:
+  BCGPT_SECRET_KEY: ""
+  DATABASE_URL: ""
+  OPENAI_API_KEY: ""
+  RAG_EMBEDDING_MODEL_API_KEY: ""
+
+initContainers:
+  dbMigration:
+    enabled: true
+    command: ["alembic", "upgrade", "head"]
+
+extraEnv: []
+#  - name: EXTRA_VAR
+#    value: "extra-value"
+
+extraEnvFrom: []
+#  - configMapRef:
+#      name: extra-config
+#  - secretRef:
+#      name: extra-secret
+
+extraVolumes: []
+#  - name: extra-volume
+#    emptyDir: {}
+
+extraVolumeMounts: []
+#  - name: extra-volume
+#    mountPath: /extra
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+extraHosts:
+  - hostname: host.docker.internal
+    ip: host-gateway

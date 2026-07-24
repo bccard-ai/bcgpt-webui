@@ -1,0 +1,30 @@
+# BCGPT WebUI Standalone (without Ollama)
+# Usage: docker compose -f docker-compose.without-ollama.yml up -d
+#
+# Configure your LLM provider:
+#   - Ollama: set OLLAMA_BASE_URL to your Ollama server
+#   - OpenAI: set OPENAI_API_KEY
+#   - Other: set the appropriate API key and base URL
+
+services:
+  bcgpt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bcgpt
+    ports:
+      - "8090:8090"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - BCGPT_SECRET_KEY=${BCGPT_SECRET_KEY:-}
+    volumes:
+      - bcgpt-data:/app/backend/data
+    # If connecting to Ollama on the host machine:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  bcgpt-data:
+    name: bcgpt-data

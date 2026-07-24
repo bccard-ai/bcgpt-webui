@@ -1,0 +1,822 @@
+<script lang="ts">
+	import { get } from 'svelte/store';
+
+	import { DropdownMenu } from 'bits-ui';
+	import { marked } from 'marked';
+	import Fuse from 'fuse.js';
+
+	import { onMount, getContext, tick, untrack } from 'svelte';
+
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import Check from '$lib/components/icons/Check.svelte';
+	import Search from '$lib/components/icons/Search.svelte';
+
+	import { deleteModel, getOllamaVersion, pullModel } from '$lib/apis/ollama';
+
+	import {
+		user,
+		MODEL_DOWNLOAD_POOL,
+		models,
+		mobile,
+		temporaryChatEnabled,
+		settings,
+		config
+	} from '$lib/stores';
+	import { toast } from 'svelte-sonner';
+	import { sanitizeResponseContent, splitStream } from '$lib/utils';
+	import { getModelIconUrl } from '$lib/utils/providers';
+	import { getModels } from '$lib/apis';
+
+	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Switch from '$lib/components/common/Switch.svelte';
+	import ChatBubbleOval from '$lib/components/icons/ChatBubbleOval.svelte';
+	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import type { i18n as i18nType } from 'i18next';
+	import type { Writable } from 'svelte/store';
+	import type { Model } from '$lib/stores';
+
+	const i18n: Writable<i18nType> = getContext<Writable<i18nType>>('i18n');
+	/** A single item in the model selector dropdown. */
+	interface SelectorItem {
+		label: string;
+		value: string;
+		model: Model;
+		[key: string]: string | Model | undefined;
+	}
+
+	interface Props {
+		/** Unique identifier for this selector instance. */
+		id?: string;
+		/** Currently selected model value, bindable. */
+		value?: string;
+		/** Placeholder text when no model is selected. */
+		placeholder?: string;
+		/** Whether the search input is shown. */
+		searchEnabled?: boolean;
+		/** Placeholder text for the search input. */
+		searchPlaceholder?: string;
+		/** Whether to show the temporary chat toggle at the bottom. */
+		showTemporaryChatControl?: boolean;
+		/** List of model items to display. */
+		items?: SelectorItem[];
+		/** CSS class for the dropdown content width. */
+		className?: string;
+		/** CSS class for the trigger button text. */
+		triggerClassName?: string;
+		/** Optional custom snippet rendered inside the dropdown. */
+		children?: import('svelte').Snippet;
+	}
+
+	let {
+		id = '',
+		value = $bindable(''),
+		placeholder = 'Select a model',
+		searchEnabled = true,
+		searchPlaceholder = $i18n.t('Search a model'),
+		showTemporaryChatControl = false,
+		items = [],
+		className = 'w-[32rem]',
+		triggerClassName = 'text-lg',
+		children
+	}: Props = $props();
+
+	// --- DOM refs ---
+	let tagsContainerElement = $state<HTMLElement>();
+
+	// --- Dropdown state ---
+	let show = $state(false);
+	let tags = $state<string[]>([]);
+
+	// --- Selection state ---
+	let selectedModel = $derived(items.find((item) => item.value === value) ?? '');
+	let selectedModelIdx = $state(0);
+
+	// --- Search & filter state ---
+	let searchValue = $state('');
+	let selectedTag = $state('');
+	let selectedConnectionType = $state('');
+
+	// --- Ollama version (lazy-fetched for admin pull UI) ---
+	let ollamaVersion = $state<string | false | null>(null);
+	let ollamaVersionFetched = $state(false);
+
+	/** Fuse.js instance for fuzzy search across model name, tags, and value. */
+	const fuse = new Fuse(
+		untrack(() => items).map((item) => ({
+			...item,
+			modelName: item.model?.name,
+			tags: (item.model?.tags ?? []).map((tag) => tag.name).join(' '),
+			desc: item.model?.info?.meta?.description
+		})),
+		{
+			keys: ['value', 'tags', 'modelName'],
+			threshold: 0.4
+		}
+	);
+
+	/**
+	 * Reset the dropdown scroll position and highlight index.
+	 * If the current value is in the filtered list, highlight it; otherwise default to 0.
+	 */
+	const resetView = async () => {
+		await tick();
+		const selectedInFiltered = filteredItems.findIndex((item) => item.value === value);
+		selectedModelIdx = selectedInFiltered >= 0 ? selectedInFiltered : 0;
+		await tick();
+		document.querySelector(`[data-arrow-selected="true"]`)?.scrollIntoView({
+			block: 'center',
+			inline: 'nearest',
+			behavior: 'instant'
+		});
+	};
+
+	/**
+	 * Pull a model from Ollama registry using the current search value as the tag.
+	 * Streams download progress updates into MODEL_DOWNLOAD_POOL.
+	 */
+	const pullModelHandler = async () => {
+		const sanitizedModelTag = searchValue.trim().replace(/^ollama\s+(run|pull)\s+/, '');
+		const pool = get(MODEL_DOWNLOAD_POOL);
+
+		if (pool[sanitizedModelTag]) {
+			toast.error(
+				$i18n.t(`Model '{{modelTag}}' is already in queue for downloading.`, {
+					modelTag: sanitizedModelTag
+				})
+			);
+			return;
+		}
+		if (Object.keys(pool).length === 3) {
+			toast.error(
+				$i18n.t('Maximum of 3 models can be downloaded simultaneously. Please try again later.')
+			);
+			return;
+		}
+
+		const [res, controller] = await pullModel('', sanitizedModelTag, '0').catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+
+		if (res) {
+			const reader = res.body
+				.pipeThrough(new TextDecoderStream())
+				.pipeThrough(splitStream('\n'))
+				.getReader();
+
+			MODEL_DOWNLOAD_POOL.set({
+				...get(MODEL_DOWNLOAD_POOL),
+				[sanitizedModelTag]: {
+					...get(MODEL_DOWNLOAD_POOL)[sanitizedModelTag],
+					abortController: controller,
+					reader,
+					done: false
+				}
+			});
+
+			while (true) {
+				try {
+					const { value: chunk, done } = await reader.read();
+					if (done) break;
+
+					for (const line of chunk.split('\n')) {
+						if (line === '') continue;
+						const data = JSON.parse(line);
+						if (data.error) throw data.error;
+						if (data.detail) throw data.detail;
+
+						if (data.status) {
+							if (data.digest) {
+								const downloadProgress = data.completed
+									? Math.round((data.completed / data.total) * 1000) / 10
+									: 100;
+
+								MODEL_DOWNLOAD_POOL.set({
+									...get(MODEL_DOWNLOAD_POOL),
+									[sanitizedModelTag]: {
+										...get(MODEL_DOWNLOAD_POOL)[sanitizedModelTag],
+										pullProgress: downloadProgress,
+										digest: data.digest
+									}
+								});
+							} else {
+								toast.success(data.status);
+								MODEL_DOWNLOAD_POOL.set({
+									...get(MODEL_DOWNLOAD_POOL),
+									[sanitizedModelTag]: {
+										...get(MODEL_DOWNLOAD_POOL)[sanitizedModelTag],
+										done: data.status === 'success'
+									}
+								});
+							}
+						}
+					}
+				} catch (error) {
+					const errorMessage = typeof error !== 'string' ? error.message : error;
+					toast.error(`${errorMessage}`);
+					break;
+				}
+			}
+
+			if (get(MODEL_DOWNLOAD_POOL)[sanitizedModelTag].done) {
+				toast.success(
+					$i18n.t(`Model '{{modelName}}' has been successfully downloaded.`, {
+						modelName: sanitizedModelTag
+					})
+				);
+				models.set(
+					await getModels(
+						'',
+						get(config)?.features?.enable_direct_connections &&
+							(get(settings)?.directConnections ?? null)
+					)
+				);
+			} else {
+				toast.error($i18n.t('Download canceled'));
+			}
+
+			delete get(MODEL_DOWNLOAD_POOL)[sanitizedModelTag];
+			MODEL_DOWNLOAD_POOL.set({ ...get(MODEL_DOWNLOAD_POOL) });
+		}
+	};
+
+	/**
+	 * Lazily fetch the Ollama version once, only for admins with Ollama API enabled.
+	 * Avoids calling during chat load to prevent 500 errors when Ollama is not running.
+	 */
+	const ensureOllamaVersion = async () => {
+		if (ollamaVersionFetched) return;
+		if (!($user?.role === 'admin' && ($config?.features?.enable_ollama_api ?? false))) return;
+		ollamaVersionFetched = true;
+		ollamaVersion = await getOllamaVersion('').catch(() => false);
+	};
+
+	/**
+	 * Extract unique tag names from all items, sorted alphabetically.
+	 * Called once on mount.
+	 */
+	const extractUniqueTags = (items: SelectorItem[]): string[] => {
+		if (!items) return [];
+		return Array.from(
+			new Set(items.flatMap((item) => item.model?.tags ?? []).map((tag) => tag.name))
+		).sort((a, b) => a.localeCompare(b));
+	};
+
+	/**
+	 * Cancel an in-progress model pull, aborting the download stream
+	 * and cleaning up the download pool entry.
+	 * @param model - The model tag to cancel.
+	 */
+	const cancelModelPullHandler = async (model: string) => {
+		const { reader, abortController } = get(MODEL_DOWNLOAD_POOL)[model];
+		if (abortController) {
+			abortController.abort();
+		}
+		if (reader) {
+			await reader.cancel();
+			delete get(MODEL_DOWNLOAD_POOL)[model];
+			MODEL_DOWNLOAD_POOL.set({ ...get(MODEL_DOWNLOAD_POOL) });
+			await deleteModel('', model);
+			toast.success($i18n.t('{{model}} download has been canceled', { model }));
+		}
+	};
+
+	onMount(() => {
+		tags = extractUniqueTags(items);
+	});
+
+	/**
+	 * Check whether an item matches the current connection type filter.
+	 * @param item - The selector item to test.
+	 * @returns True if the item passes the connection type filter.
+	 */
+	const matchesConnectionType = (item: SelectorItem): boolean => {
+		if (selectedConnectionType === '') return true;
+		if (selectedConnectionType === 'ollama') return item.model?.owned_by === 'ollama';
+		if (selectedConnectionType === 'openai') return item.model?.owned_by === 'openai';
+		if (selectedConnectionType === 'direct') return !!item.model?.direct;
+		return true;
+	};
+
+	/**
+	 * Check whether an item matches the currently selected tag filter.
+	 * @param item - The selector item to test.
+	 * @returns True if the item passes the tag filter.
+	 */
+	const matchesTag = (item: SelectorItem): boolean => {
+		if (selectedTag === '') return true;
+		return (item.model?.tags ?? []).some((tag) => tag.name === selectedTag);
+	};
+
+	/** Filtered model items based on search text, tag, and connection type. */
+	let filteredItems = $derived(
+		searchValue
+			? fuse
+					.search(searchValue)
+					.map((e) => e.item)
+					.filter(matchesTag)
+					.filter(matchesConnectionType)
+			: items.filter(matchesTag).filter(matchesConnectionType)
+	);
+
+	/** Re-scroll to the highlighted item whenever filter criteria change. */
+	$effect(() => {
+		resetView();
+	});
+
+	/**
+	 * Handle keyboard navigation within the search input.
+	 * Enter selects the highlighted item, ArrowUp/Down moves the highlight,
+	 * and any other key resets to the first item.
+	 */
+	const handleSearchKeydown = (e: KeyboardEvent) => {
+		if (e.code === 'Enter' && filteredItems.length > 0) {
+			value = filteredItems[selectedModelIdx].value;
+			show = false;
+			return;
+		} else if (e.code === 'ArrowDown') {
+			selectedModelIdx = Math.min(selectedModelIdx + 1, filteredItems.length - 1);
+		} else if (e.code === 'ArrowUp') {
+			selectedModelIdx = Math.max(selectedModelIdx - 1, 0);
+		} else {
+			selectedModelIdx = 0;
+		}
+		document.querySelector(`[data-arrow-selected="true"]`)?.scrollIntoView({
+			block: 'center',
+			inline: 'nearest',
+			behavior: 'instant'
+		});
+	};
+
+	/**
+	 * Handle dropdown open/close: reset search, focus input, and scroll to selected.
+	 */
+	const handleOpenChange = async () => {
+		searchValue = '';
+		window.setTimeout(() => document.getElementById('model-search-input')?.focus(), 0);
+		resetView();
+	};
+
+	/** Select a model item and close the dropdown. */
+	const selectItem = (item: SelectorItem, index: number) => {
+		value = item.value;
+		selectedModelIdx = index;
+		show = false;
+	};
+
+	/** Clear all active filters (tag + connection type). */
+	const clearFilters = () => {
+		selectedConnectionType = '';
+		selectedTag = '';
+	};
+
+	/** Set the connection type filter and clear the tag filter. */
+	const setConnectionFilter = (type: string) => {
+		selectedTag = '';
+		selectedConnectionType = type;
+	};
+
+	/** Set the tag filter and clear the connection type filter. */
+	const setTagFilter = (tag: string) => {
+		selectedConnectionType = '';
+		selectedTag = tag;
+	};
+
+	/** Toggle temporary chat mode on/off and navigate to a new chat. */
+	const toggleTemporaryChat = async () => {
+		temporaryChatEnabled.set(!$temporaryChatEnabled);
+		await goto(resolve('/'));
+		const newChatButton = document.getElementById('new-chat-button');
+		setTimeout(() => newChatButton?.click(), 0);
+		if ($temporaryChatEnabled) {
+			history.replaceState(null, '', '?temporary-chat=true');
+		} else {
+			history.replaceState(null, '', location.pathname);
+		}
+		show = false;
+	};
+
+	/** Scroll the tags container horizontally when the user scrolls vertically. */
+	const handleTagsWheel = (e: WheelEvent) => {
+		if (e.deltaY !== 0) {
+			e.preventDefault();
+			e.currentTarget.scrollLeft += e.deltaY;
+		}
+	};
+</script>
+
+<DropdownMenu.Root bind:open={show} onOpenChange={handleOpenChange} closeFocus={false}>
+	<DropdownMenu.Trigger
+		class="relative w-full font-primary"
+		aria-label={placeholder}
+		id="model-selector-{id}-button"
+	>
+		<div
+			class="flex w-full text-left px-0.5 outline-hidden bg-transparent truncate {triggerClassName} justify-between font-medium placeholder-gray-400 focus:outline-hidden"
+		>
+			{#if selectedModel}
+				{selectedModel.label}
+			{:else}
+				{placeholder}
+			{/if}
+			<ChevronDown className=" self-center ml-2 size-3" strokeWidth="2.5" />
+		</div>
+	</DropdownMenu.Trigger>
+
+	<DropdownMenu.Portal>
+		<DropdownMenu.Content
+			class=" z-40 {$mobile
+				? `w-full`
+				: `${className}`} max-w-[calc(100vw-1rem)] justify-start rounded-xl  bg-white dark:bg-gray-850 dark:text-white shadow-lg  outline-hidden"
+			side={$mobile ? 'bottom' : 'bottom-start'}
+			sideOffset={3}
+		>
+			{#if children}{@render children()}{:else}
+				{#if searchEnabled}
+					<div class="flex items-center gap-2.5 px-5 mt-3.5 mb-1.5">
+						<Search className="size-4" strokeWidth="2.5" />
+
+						<input
+							id="model-search-input"
+							bind:value={searchValue}
+							oninput={() => ensureOllamaVersion()}
+							class="w-full text-sm bg-transparent outline-hidden"
+							placeholder={searchPlaceholder}
+							autocomplete="off"
+							onkeydown={handleSearchKeydown}
+						/>
+					</div>
+				{/if}
+
+				<div class="px-3 mb-2 max-h-64 overflow-y-auto scrollbar-hidden group relative">
+					{#if tags && items.filter((item) => !(item.model?.info?.meta?.hidden ?? false)).length > 0}
+						<div
+							class=" flex w-full sticky top-0 z-10 bg-white dark:bg-gray-850 overflow-x-auto scrollbar-none"
+							onwheel={handleTagsWheel}
+						>
+							<div
+								class="flex gap-1 w-fit text-center text-sm font-medium rounded-full bg-transparent px-1.5 pb-0.5"
+								bind:this={tagsContainerElement}
+							>
+								<button
+									class="min-w-fit outline-none p-1.5 {selectedTag === '' &&
+									selectedConnectionType === ''
+										? ''
+										: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+									onclick={clearFilters}
+								>
+									{$i18n.t('All')}
+								</button>
+
+								{#if items.find((item) => item.model?.owned_by === 'ollama') && items.find((item) => item.model?.owned_by === 'openai')}
+									<button
+										class="min-w-fit outline-none p-1.5 {selectedConnectionType === 'ollama'
+											? ''
+											: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+										onclick={() => setConnectionFilter('ollama')}
+									>
+										{$i18n.t('Local')}
+									</button>
+									<button
+										class="min-w-fit outline-none p-1.5 {selectedConnectionType === 'openai'
+											? ''
+											: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+										onclick={() => setConnectionFilter('openai')}
+									>
+										{$i18n.t('External')}
+									</button>
+								{/if}
+
+								{#if items.find((item) => item.model?.direct)}
+									<button
+										class="min-w-fit outline-none p-1.5 {selectedConnectionType === 'direct'
+											? ''
+											: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+										onclick={() => setConnectionFilter('direct')}
+									>
+										{$i18n.t('Direct')}
+									</button>
+								{/if}
+
+								{#each tags as tag (tag.name)}
+									<button
+										class="min-w-fit outline-none p-1.5 {selectedTag === tag
+											? ''
+											: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition capitalize"
+										onclick={() => setTagFilter(tag)}
+									>
+										{tag}
+									</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					{#each filteredItems.filter((item) => !(item.model?.info?.meta?.hidden ?? false)) as item, index (item.value)}
+						<button
+							aria-label="model-item"
+							class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-hidden transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-highlighted:bg-muted {index ===
+							selectedModelIdx
+								? 'bg-gray-100 dark:bg-gray-800 group-hover:bg-transparent'
+								: ''}"
+							data-arrow-selected={index === selectedModelIdx}
+							data-value={item.value}
+							onclick={() => selectItem(item, index)}
+						>
+							<div class="flex flex-col">
+								{#if $mobile && (item?.model?.tags ?? []).length > 0}
+									<div class="flex gap-0.5 self-start h-full mb-1.5 -translate-x-1">
+										{#each item.model?.tags.sort( (a, b) => a.name.localeCompare(b.name) ) as tag (tag.name)}
+											<div
+												class=" text-xs font-bold px-1 rounded-sm uppercase line-clamp-1 bg-gray-500/20 text-gray-700 dark:text-gray-200"
+											>
+												{tag.name}
+											</div>
+										{/each}
+									</div>
+								{/if}
+								<div class="flex items-center gap-2">
+									<div class="flex items-center min-w-fit">
+										<div class="line-clamp-1">
+											<div class="flex items-center min-w-fit">
+												<Tooltip
+													content={$user?.role === 'admin' ? (item?.value ?? '') : ''}
+													placement="top-start"
+												>
+													<img
+														src={getModelIconUrl({
+															id: item.model?.id ?? '',
+															owned_by: item.model?.owned_by,
+															direct: item.model?.direct,
+															profileImageUrl: item.model?.info?.meta?.profile_image_url
+														})}
+														alt={$i18n.t('Model')}
+														class="rounded-full size-5 flex items-center mr-2"
+													/>
+
+													<div class="flex items-center line-clamp-1">
+														<div class="line-clamp-1">
+															{item.label}
+														</div>
+
+														{#if item.model.owned_by === 'ollama' && (item.model.ollama?.details?.parameter_size ?? '') !== ''}
+															<div class="flex ml-1 items-center translate-y-[0.5px]">
+																<Tooltip
+																	content={`${
+																		item.model.ollama?.details?.quantization_level
+																			? item.model.ollama?.details?.quantization_level + ' '
+																			: ''
+																	}${
+																		item.model.ollama?.size
+																			? `(${(item.model.ollama?.size / 1024 ** 3).toFixed(1)}GB)`
+																			: ''
+																	}`}
+																	className="self-end"
+																>
+																	<span
+																		class=" text-xs font-medium text-gray-600 dark:text-gray-400 line-clamp-1"
+																		>{item.model.ollama?.details?.parameter_size ?? ''}</span
+																	>
+																</Tooltip>
+															</div>
+														{/if}
+													</div>
+												</Tooltip>
+											</div>
+										</div>
+									</div>
+
+									<!-- {JSON.stringify(item.info)} -->
+
+									{#if item.model?.direct}
+										<Tooltip content={$i18n.t('Direct')}>
+											<div class="translate-y-[1px]">
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													viewBox="0 0 16 16"
+													fill="currentColor"
+													class="size-3"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M2 2.75A.75.75 0 0 1 2.75 2C8.963 2 14 7.037 14 13.25a.75.75 0 0 1-1.5 0c0-5.385-4.365-9.75-9.75-9.75A.75.75 0 0 1 2 2.75Zm0 4.5a.75.75 0 0 1 .75-.75 6.75 6.75 0 0 1 6.75 6.75.75.75 0 0 1-1.5 0C8 10.35 5.65 8 2.75 8A.75.75 0 0 1 2 7.25ZM3.5 11a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											</div>
+										</Tooltip>
+									{:else if item.model.owned_by === 'openai'}
+										<Tooltip content={$i18n.t('External')}>
+											<div class="translate-y-[1px]">
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													viewBox="0 0 16 16"
+													fill="currentColor"
+													class="size-3"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M8.914 6.025a.75.75 0 0 1 1.06 0 3.5 3.5 0 0 1 0 4.95l-2 2a3.5 3.5 0 0 1-5.396-4.402.75.75 0 0 1 1.251.827 2 2 0 0 0 3.085 2.514l2-2a2 2 0 0 0 0-2.828.75.75 0 0 1 0-1.06Z"
+														clip-rule="evenodd"
+													/>
+													<path
+														fill-rule="evenodd"
+														d="M7.086 9.975a.75.75 0 0 1-1.06 0 3.5 3.5 0 0 1 0-4.95l2-2a3.5 3.5 0 0 1 5.396 4.402.75.75 0 0 1-1.251-.827 2 2 0 0 0-3.085-2.514l-2 2a2 2 0 0 0 0 2.828.75.75 0 0 1 0 1.06Z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											</div>
+										</Tooltip>
+									{/if}
+
+									{#if item.model?.info?.meta?.description}
+										<Tooltip
+											content={`${marked.parse(
+												sanitizeResponseContent(item.model?.info?.meta?.description).replaceAll(
+													'\n',
+													'<br>'
+												)
+											)}`}
+										>
+											<div class=" translate-y-[1px]">
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke-width="1.5"
+													stroke="currentColor"
+													class="w-4 h-4"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+													/>
+												</svg>
+											</div>
+										</Tooltip>
+									{/if}
+
+									{#if !$mobile && (item?.model?.tags ?? []).length > 0}
+										<div
+											class="flex gap-0.5 self-center items-center h-full translate-y-[0.5px] overflow-x-auto scrollbar-none"
+										>
+											{#each item.model?.tags.toSorted( (a, b) => a.name.localeCompare(b.name) ) ?? [] as tag (tag.name)}
+												<Tooltip content={tag.name} className="flex-shrink-0">
+													<div
+														class=" text-xs font-bold px-1 rounded-sm uppercase bg-gray-500/20 text-gray-700 dark:text-gray-200"
+													>
+														{tag.name}
+													</div>
+												</Tooltip>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							</div>
+
+							{#if value === item.value}
+								<div class="ml-auto pl-2 pr-2 md:pr-0">
+									<Check />
+								</div>
+							{/if}
+						</button>
+					{:else}
+						<div>
+							<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
+								{$i18n.t('No results found')}
+							</div>
+						</div>
+					{/each}
+
+					{#if !(searchValue.trim() in $MODEL_DOWNLOAD_POOL) && searchValue && ollamaVersion && $user.role === 'admin'}
+						<Tooltip
+							content={$i18n.t(`Pull "{{searchValue}}" from Ollama.com`, {
+								searchValue: searchValue
+							})}
+							placement="top-start"
+						>
+							<button
+								class="flex w-full font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-hidden transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-highlighted:bg-muted"
+								onclick={() => {
+									pullModelHandler();
+								}}
+							>
+								<div class=" truncate">
+									{$i18n.t(`Pull "{{searchValue}}" from Ollama.com`, { searchValue: searchValue })}
+								</div>
+							</button>
+						</Tooltip>
+					{/if}
+
+					{#each Object.keys($MODEL_DOWNLOAD_POOL) as model (model)}
+						<div
+							class="flex w-full justify-between font-medium select-none rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-hidden transition-all duration-75 rounded-lg cursor-pointer data-highlighted:bg-muted"
+						>
+							<div class="flex">
+								<div class="-ml-2 mr-2.5 translate-y-0.5">
+									<svg
+										class="size-4"
+										viewBox="0 0 24 24"
+										fill="currentColor"
+										xmlns="http://www.w3.org/2000/svg"
+										><style>
+											.spinner_ajPY {
+												transform-origin: center;
+												animation: spinner_AtaB 0.75s infinite linear;
+											}
+											@keyframes spinner_AtaB {
+												100% {
+													transform: rotate(360deg);
+												}
+											}
+										</style><path
+											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+											opacity=".25"
+										/><path
+											d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
+											class="spinner_ajPY"
+										/></svg
+									>
+								</div>
+
+								<div class="flex flex-col self-start">
+									<div class="flex gap-1">
+										<div class="line-clamp-1">
+											{$i18n.t('Downloading "{{model}}"', { model })}
+										</div>
+
+										<div class="shrink-0">
+											{'pullProgress' in $MODEL_DOWNLOAD_POOL[model]
+												? `(${$MODEL_DOWNLOAD_POOL[model].pullProgress}%)`
+												: ''}
+										</div>
+									</div>
+
+									{#if 'digest' in $MODEL_DOWNLOAD_POOL[model] && $MODEL_DOWNLOAD_POOL[model].digest}
+										<div class="-mt-1 h-fit text-[0.7rem] dark:text-gray-500 line-clamp-1">
+											{$MODEL_DOWNLOAD_POOL[model].digest}
+										</div>
+									{/if}
+								</div>
+							</div>
+
+							<div class="mr-2 ml-1 translate-y-0.5">
+								<Tooltip content={$i18n.t('Cancel')}>
+									<button
+										class="text-gray-800 dark:text-gray-100"
+										aria-label={$i18n.t('Cancel')}
+										onclick={() => cancelModelPullHandler(model)}
+									>
+										<svg
+											class="w-4 h-4 text-gray-800 dark:text-white"
+											aria-hidden="true"
+											xmlns="http://www.w3.org/2000/svg"
+											width="24"
+											height="24"
+											fill="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke="currentColor"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M6 18 17.94 6M18 18 6.06 6"
+											/>
+										</svg>
+									</button>
+								</Tooltip>
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				{#if showTemporaryChatControl}
+					<hr class="border-gray-100 dark:border-gray-800" />
+
+					<div class="flex items-center mx-2 my-2">
+						<button
+							class="flex justify-between w-full font-medium line-clamp-1 select-none items-center rounded-button py-2 px-3 text-sm text-gray-700 dark:text-gray-100 outline-hidden transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-highlighted:bg-muted"
+							onclick={toggleTemporaryChat}
+						>
+							<div class="flex gap-2.5 items-center">
+								<ChatBubbleOval className="size-4" strokeWidth="2.5" />
+
+								{$i18n.t(`Temporary Chat`)}
+							</div>
+
+							<div>
+								<Switch state={$temporaryChatEnabled} />
+							</div>
+						</button>
+					</div>
+				{/if}
+
+				<div class="hidden w-[42rem]"></div>
+				<div class="hidden w-[32rem]"></div>
+			{/if}
+		</DropdownMenu.Content>
+	</DropdownMenu.Portal>
+</DropdownMenu.Root>

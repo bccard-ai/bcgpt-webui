@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Frontend
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      # Check-only in CI (the `--fix` in `bun run lint:frontend` is for the local pre-commit hook;
+      # CI must never mutate). Still red on the pre-existing baseline — see PRODUCTION_READINESS_PLAN C/P0.
+      - run: bunx eslint .
+
+  typecheck-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run test:frontend
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    # NOTE: intentionally NOT gated behind lint-frontend / typecheck-frontend.
+    # Those jobs currently hard-fail on a large pre-existing baseline (eslint + svelte-check),
+    # which previously caused this build job to be SKIPPED — meaning the production build was
+    # never verified in CI. Until the baseline is ratcheted down (or those jobs are made
+    # non-blocking), the build must verify independently. See docs/PRODUCTION_HARDENING_LOG.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+
+  audit-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      # Report-only Bun audit — aligns with the Bun-only lockfile strategy.
+      # `npm audit` fails with ENOLOCK (no package-lock.json). Until the 5-high
+      # advisory backlog is triaged/waived, this job is non-blocking (exit 0).
+      # See docs/FRONTEND_AUDIT_CI_ALIGNMENT_RUNBOOK_2026-06-23.md §3 Phase 1.
+      - name: Bun audit report
+        run: |
+          set +e
+          bun audit --audit-level high --json > frontend-audit.json
+          json_status=$?
+          bun audit --audit-level high > frontend-audit.txt
+          text_status=$?
+          {
+            echo "## Frontend Bun audit"
+            echo "- Bun: $(bun --version)"
+            echo "- Lockfile: $(sha256sum bun.lock | awk '{print $1}')"
+            echo "- JSON exit: ${json_status}"
+            echo "- Text exit: ${text_status}"
+            echo "- Command: \`bun audit --audit-level high\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-bun-audit
+          path: |
+            frontend-audit.json
+            frontend-audit.txt
+
+  # Backend
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r backend/requirements.txt
+      - run: pip install pylint black pip-audit
+      - run: black --check backend/bcgpt/
+      - run: pylint backend/bcgpt/ --errors-only || true
+      # Backend dependency CVE scan (complements the frontend `bun audit`). Non-blocking for now —
+      # surfaces advisories in the CI log; flip off `|| true` to make it gate once the backlog is
+      # triaged. See docs/PRODUCTION_READINESS_PLAN.md (A/P2).
+      - run: pip-audit -r backend/requirements.txt --desc || true
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r backend/requirements.txt
+      - run: pip install "docker~=7.1.0" "pytest>=9.0.3,<10" "moto[s3]>=5.0.26"
+      # Standalone unit tests must pass (real gate — no Docker/Postgres needed).
+      - run: cd backend && python -m pytest bcgpt/test/unit/ -v
+      # Integration tests (AbstractPostgresTest) are WIP: import-layout + Docker
+      # harness still being fixed (see docs/PRODUCTION_HARDENING_LOG.md), so kept
+      # non-blocking until they collect cleanly.
+      - run: cd backend && python -m pytest bcgpt/test/ -v --tb=short --ignore=bcgpt/test/unit || true

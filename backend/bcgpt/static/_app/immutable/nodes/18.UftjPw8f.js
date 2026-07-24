@@ -1,0 +1,2 @@
+import"../chunks/Bzak7iHL.js";import"../chunks/69_IOA4Y.js";import{p as m,f as i,a as s,j as e}from"../chunks/wmDFjFr_.js";import{a as f,f as n}from"../chunks/BKZDP7KO.js";import{i as d}from"../chunks/v_8NnkpJ.js";import{p as g}from"../chunks/ClvMNYkL.js";import{H as h,C as l}from"../chunks/DwhoFLS9.js";var c=n("<!> <!>",1);function x(o,p){m(p,!1),d();var a=c(),r=i(a);h(r,{});var t=e(r,2);l(t,{get chatIdProp(){return g.params.id}}),f(o,a),s()}export{x as component};
+//# sourceMappingURL=18.UftjPw8f.js.map

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bcgpt.fullname" . }}
+  labels:
+    {{- include "bcgpt.labels" . | nindent 4 }}
+data:
+  PORT: "8090"
+  DOCKER: "true"
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

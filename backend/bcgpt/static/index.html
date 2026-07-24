@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="/static/favicon.png" />
+		<link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96" />
+		<link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+		<link rel="shortcut icon" href="/static/favicon.ico" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-title" content="BCGPT" />
+
+		<link rel="manifest" href="/manifest.json" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+		/>
+		<meta name="theme-color" content="#171717" />
+		<meta name="robots" content="noindex,nofollow" />
+		<meta name="description" content="BCGPT" />
+		<link
+			rel="search"
+			type="application/opensearchdescription+xml"
+			title="BCGPT"
+			href="/opensearch.xml"
+		/>
+		<script src="/static/loader.js" defer></script>
+
+		<script>
+			function resizeIframe(obj) {
+				obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
+			}
+		</script>
+
+		<script>
+			// On page load or when changing themes, best to add inline in `head` to avoid FOUC
+			(() => {
+				const metaThemeColorTag = document.querySelector('meta[name="theme-color"]');
+				const prefersDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+				if (!localStorage?.theme) {
+					localStorage.theme = 'system';
+				}
+
+				if (localStorage.theme === 'system') {
+					document.documentElement.classList.add(prefersDarkTheme ? 'dark' : 'light');
+					metaThemeColorTag.setAttribute('content', prefersDarkTheme ? '#171717' : '#ffffff');
+				} else if (localStorage.theme === 'oled-dark') {
+					document.documentElement.style.setProperty('--color-gray-800', '#101010');
+					document.documentElement.style.setProperty('--color-gray-850', '#050505');
+					document.documentElement.style.setProperty('--color-gray-900', '#000000');
+					document.documentElement.style.setProperty('--color-gray-950', '#000000');
+					document.documentElement.classList.add('dark');
+					metaThemeColorTag.setAttribute('content', '#000000');
+				} else if (localStorage.theme === 'light') {
+					document.documentElement.classList.add('light');
+					metaThemeColorTag.setAttribute('content', '#ffffff');
+				} else if (localStorage.theme === 'her') {
+					document.documentElement.classList.add('dark');
+					document.documentElement.classList.add('her');
+					metaThemeColorTag.setAttribute('content', '#983724');
+				} else {
+					document.documentElement.classList.add('dark');
+					metaThemeColorTag.setAttribute('content', '#171717');
+				}
+
+				window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+					if (localStorage.theme === 'system') {
+						if (e.matches) {
+							document.documentElement.classList.add('dark');
+							document.documentElement.classList.remove('light');
+							metaThemeColorTag.setAttribute('content', '#171717');
+						} else {
+							document.documentElement.classList.add('light');
+							document.documentElement.classList.remove('dark');
+							metaThemeColorTag.setAttribute('content', '#ffffff');
+						}
+					}
+				});
+
+				function setSplashImage() {
+					const logo = document.getElementById('logo');
+					const isDarkMode = document.documentElement.classList.contains('dark');
+
+					if (isDarkMode) {
+						const darkImage = new Image();
+						darkImage.src = '/static/splash-dark.png';
+
+						darkImage.onload = () => {
+							logo.src = '/static/splash-dark.png';
+							logo.style.filter = '';
+						};
+
+						darkImage.onerror = () => {
+							logo.style.filter = 'invert(1)';
+						};
+					}
+				}
+
+				window.onload = setSplashImage;
+			})();
+		</script>
+
+		<title>BCGPT</title>
+
+		<link href="/_app/immutable/entry/start.BjGMkTWr.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/DVx7pC3Q.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/wmDFjFr_.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/DIeogL5L.js" rel="modulepreload" />
+		<link href="/_app/immutable/entry/app.bxSqpdNF.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Dp1pzeXC.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BRxIPNE6.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/D4bZWLIo.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BKZDP7KO.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Bzak7iHL.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BS8SMZ8w.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Dhm_xSnn.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CjUO-CEe.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/XmyshOgj.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Dy-S0HPn.js" rel="modulepreload" />
+		<link href="/_app/immutable/nodes/0.C_VTaV2t.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/DH_XhG7S.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Bn1NJ8fr.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CxoMyCnk.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CHFC5TJK.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BIIei4U1.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BGGTUj09.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BLeFn5I5.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/ClvMNYkL.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/DzjwC45m.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/DYlrbfPw.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/69_IOA4Y.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Bv9CUrlr.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CJ72a5Ct.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/D2gkIbLQ.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BOp0WA3K.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BzJZ7bBS.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CVsmQCGX.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BBRrJ70a.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CIY2eab3.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Llu_gK_Z.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CtuqnoPo.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/BSKMTLSQ.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/Ch4bKn2a.js" rel="modulepreload" />
+		<link href="/_app/immutable/chunks/CnvijS-n.js" rel="modulepreload" />
+
+		<link href="/_app/immutable/assets/0.cKzTI-qt.css" rel="stylesheet" />
+	</head>
+
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_1k1qkaa = {
+						base: ''
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import('/_app/immutable/entry/start.BjGMkTWr.js'),
+						import('/_app/immutable/entry/app.bxSqpdNF.js')
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+
+		<div id="splash-screen">
+			<div class="splash-container">
+				<div class="splash-logo-area">
+					<img id="logo" class="splash-logo" src="/static/splash.png" alt="BCGPT" />
+					<div id="logo-her" style="display: none">
+						<img class="splash-logo-her-img" src="/static/splash.png" alt="BCGPT" />
+					</div>
+				</div>
+
+				<div class="splash-status-bar">
+					<div class="splash-status-dot"></div>
+					<span class="splash-status-text">BCGPT — starting</span>
+				</div>
+
+				<div id="boot-log">
+					<div id="boot-log-lines">
+						<div id="boot-log-cursor" class="boot-cursor">▌</div>
+					</div>
+				</div>
+
+				<div id="progress-background"></div>
+				<div id="progress-bar" class="bg-white"></div>
+			</div>
+		</div>
+
+		<script>
+			(function () {
+				var spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+				var currentSpinIdx = 0;
+				var spinInterval = null;
+				var currentLineEl = null;
+				var bootStarted = false;
+				var bootFailedShown = false;
+
+				window.addBootLog = function (message, status) {
+					bootStarted = true;
+					var lines = document.getElementById('boot-log-lines');
+					var cursor = document.getElementById('boot-log-cursor');
+					if (!lines || !cursor) return;
+
+					var now = new Date();
+					var ts = [now.getHours(), now.getMinutes(), now.getSeconds()]
+						.map(function (v) {
+							return String(v).padStart(2, '0');
+						})
+						.join(':');
+
+					if (currentLineEl) {
+						clearInterval(spinInterval);
+						spinInterval = null;
+						var prevText = currentLineEl.getAttribute('data-message') || '';
+						currentLineEl.innerHTML =
+							'<span class="log-ts">[' +
+							ts +
+							']</span> ' +
+							'<span class="log-ok">✓</span> ' +
+							prevText;
+						currentLineEl = null;
+					}
+
+					var line = document.createElement('div');
+					line.setAttribute('data-message', message);
+					line.className = 'log-line';
+
+					if (status === 'done' || status === 'error') {
+						var icon =
+							status === 'done'
+								? '<span class="log-ok">✓</span>'
+								: '<span class="log-err">✗</span>';
+						line.innerHTML = '<span class="log-ts">[' + ts + ']</span> ' + icon + ' ' + message;
+					} else {
+						line.innerHTML =
+							'<span class="log-ts">[' +
+							ts +
+							']</span> <span class="boot-spinner">' +
+							spinnerFrames[0] +
+							'</span> ' +
+							message;
+						currentLineEl = line;
+
+						var spinEl = line.querySelector('.boot-spinner');
+						spinInterval = setInterval(function () {
+							currentSpinIdx = (currentSpinIdx + 1) % spinnerFrames.length;
+							if (spinEl) spinEl.textContent = spinnerFrames[currentSpinIdx];
+						}, 80);
+					}
+
+					lines.insertBefore(line, cursor);
+					var bootLog = document.getElementById('boot-log');
+					if (bootLog) bootLog.scrollTop = bootLog.scrollHeight;
+				};
+
+				window.bootFailed = function (title, detail) {
+					if (bootFailedShown) return;
+					bootFailedShown = true;
+					bootStarted = true;
+
+					// update status bar to error
+					var dot = document.querySelector('.splash-status-dot');
+					if (dot) dot.className = 'splash-status-dot splash-status-dot-error';
+					var statusText = document.querySelector('.splash-status-text');
+					if (statusText) statusText.textContent = 'BCGPT — connection failed';
+
+					if (currentLineEl) {
+						clearInterval(spinInterval);
+						spinInterval = null;
+						currentLineEl = null;
+					}
+
+					window.addBootLog(title, 'error');
+
+					if (detail) {
+						var lines = document.getElementById('boot-log-lines');
+						if (lines) {
+							var detailLine = document.createElement('div');
+							detailLine.className = 'log-detail';
+							detailLine.textContent = detail;
+							lines.appendChild(detailLine);
+						}
+					}
+
+					var bootLog = document.getElementById('boot-log');
+					if (bootLog) {
+						var retryBtn = document.createElement('div');
+						retryBtn.className = 'log-retry-wrap';
+						retryBtn.innerHTML =
+							'<button onclick="location.reload()" class="log-retry-btn">↻ Retry</button>';
+						bootLog.appendChild(retryBtn);
+					}
+				};
+
+				// Fallback: if JS bundle never loads (onMount never fires),
+				// show a helpful message after 8 seconds.
+				setTimeout(function () {
+					if (!bootStarted) {
+						window.bootFailed(
+							'Application failed to load',
+							'Failed to load the application bundle.\n' +
+								'Check your network connection or try again shortly.'
+						);
+					}
+				}, 8000);
+			})();
+		</script>
+	</body>
+</html>
+
+<style type="text/css" nonce="">
+	/* ── Base ── */
+	html {
+		overflow-y: hidden !important;
+	}
+
+	/* ── Splash screen ── */
+	#splash-screen {
+		position: fixed;
+		z-index: 100;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #fafafa;
+		transition: opacity 0.3s ease;
+	}
+
+	html.dark #splash-screen {
+		background: #0a0a0a;
+	}
+
+	html.light #splash-screen {
+		background: #fafafa;
+	}
+
+	html.her #splash-screen {
+		background: linear-gradient(145deg, #7c2d1e 0%, #983724 50%, #a8402e 100%);
+	}
+
+	/* ── Container ── */
+	.splash-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+		width: 90%;
+		max-width: 28rem;
+		padding: 2rem;
+	}
+
+	/* ── Logo ── */
+	.splash-logo-area {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.splash-logo {
+		width: auto;
+		height: 3rem;
+		opacity: 0;
+		animation: splash-fade-in 0.6s ease 0.1s forwards;
+	}
+
+	.splash-logo-her-img {
+		width: auto;
+		height: 11rem;
+	}
+
+	#logo-her {
+		display: none;
+	}
+
+	html.her #logo {
+		display: none;
+	}
+
+	html.her #logo-her {
+		display: block;
+	}
+
+	html.her #logo-her img {
+		filter: invert(1);
+	}
+
+	/* ── Status bar ── */
+	.splash-status-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.splash-status-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #3fb950;
+		animation: splash-pulse-dot 1.5s ease-in-out infinite;
+	}
+
+	.splash-status-dot-error {
+		background: #f85149;
+		animation: none;
+	}
+
+	html.light .splash-status-dot {
+		background: #1a7f37;
+	}
+
+	html.light .splash-status-dot-error {
+		background: #cf222e;
+	}
+
+	.splash-status-text {
+		font-family:
+			-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+		font-size: 0.7rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #8b949e;
+	}
+
+	html.dark .splash-status-text {
+		color: #8b949e;
+	}
+
+	html.light .splash-status-text {
+		color: #656d76;
+	}
+
+	html.her .splash-status-text {
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	/* ── Boot log ── */
+	#boot-log {
+		width: 100%;
+		background: #161b22;
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		border-radius: 10px;
+		padding: 0.875rem 1rem;
+		font-family:
+			'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', Menlo, Monaco, 'Courier New',
+			monospace;
+		font-size: 0.75rem;
+		line-height: 1.7;
+		color: #3fb950;
+		max-height: 12rem;
+		overflow-y: auto;
+		position: relative;
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.03),
+			0 8px 32px rgba(0, 0, 0, 0.35);
+		opacity: 0;
+		animation: splash-fade-in 0.5s ease 0.3s forwards;
+	}
+
+	html.dark #boot-log {
+		background: #0d1117;
+		border-color: #21262d;
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.03),
+			0 8px 32px rgba(0, 0, 0, 0.5);
+	}
+
+	html.light #boot-log {
+		background: #f6f8fa;
+		border-color: #d0d7de;
+		color: #1a7f37;
+		box-shadow:
+			0 0 0 1px #d0d7de,
+			0 4px 16px rgba(0, 0, 0, 0.08);
+	}
+
+	html.her #boot-log {
+		background: rgba(0, 0, 0, 0.35);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.05),
+			0 8px 32px rgba(0, 0, 0, 0.4);
+	}
+
+	/* ── Log line styles ── */
+	.log-line {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.log-ts {
+		color: #8b949e;
+	}
+
+	html.light .log-ts {
+		color: #656d76;
+	}
+
+	html.her .log-ts {
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.log-ok {
+		color: #3fb950;
+	}
+
+	html.light .log-ok {
+		color: #1a7f37;
+	}
+
+	.log-err {
+		color: #f85149;
+	}
+
+	html.light .log-err {
+		color: #cf222e;
+	}
+
+	#boot-log .boot-spinner {
+		color: #58a6ff;
+	}
+
+	html.light #boot-log .boot-spinner {
+		color: #0969da;
+	}
+
+	html.her #boot-log .boot-spinner {
+		color: rgba(255, 200, 140, 0.9);
+	}
+
+	.log-detail {
+		color: #f0883e;
+		margin-top: 0.25rem;
+		margin-bottom: 0.25rem;
+		white-space: pre-wrap;
+		word-break: break-word;
+		font-size: 0.7rem;
+		line-height: 1.5;
+	}
+
+	.log-retry-wrap {
+		margin-top: 0.75rem;
+		padding-top: 0.625rem;
+		border-top: 1px solid #21262d;
+	}
+
+	html.light .log-retry-wrap {
+		border-top-color: #d0d7de;
+	}
+
+	html.her .log-retry-wrap {
+		border-top-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.log-retry-btn {
+		background: #21262d;
+		color: #e6edf3;
+		border: 1px solid #30363d;
+		border-radius: 6px;
+		padding: 0.4rem 0.85rem;
+		font-family: inherit;
+		font-size: 0.7rem;
+		cursor: pointer;
+		width: 100%;
+		text-align: center;
+		transition:
+			background 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.log-retry-btn:hover {
+		background: #30363d;
+		border-color: #8b949e;
+	}
+
+	html.light .log-retry-btn {
+		background: #f6f8fa;
+		color: #24292f;
+		border-color: #d0d7de;
+	}
+
+	html.light .log-retry-btn:hover {
+		background: #eaeef2;
+		border-color: #8b949e;
+	}
+
+	html.her .log-retry-btn {
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(255, 255, 255, 0.9);
+		border-color: rgba(255, 255, 255, 0.15);
+	}
+
+	html.her .log-retry-btn:hover {
+		background: rgba(255, 255, 255, 0.18);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	/* ── Cursor ── */
+	@keyframes blink-cursor {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
+	}
+
+	.boot-cursor {
+		animation: blink-cursor 1s step-end infinite;
+		color: #3fb950;
+	}
+
+	html.light .boot-cursor {
+		color: #1a7f37;
+	}
+
+	html.her .boot-cursor {
+		color: rgba(255, 200, 140, 0.8);
+	}
+
+	/* ── Progress bar (her theme) ── */
+	#progress-background {
+		display: none;
+		position: relative;
+		width: 24rem;
+		height: 0.75rem;
+		border-radius: 9999px;
+		background-color: #fafafa9a;
+	}
+
+	#progress-bar {
+		display: none;
+		position: absolute;
+		width: 0%;
+		height: 0.75rem;
+		border-radius: 9999px;
+		background-color: #fff;
+	}
+
+	html.her #progress-background {
+		display: block;
+		position: relative;
+	}
+
+	html.her #progress-bar {
+		display: block;
+	}
+
+	@media (max-width: 24rem) {
+		html.her #progress-background {
+			display: none;
+		}
+
+		html.her #progress-bar {
+			display: none;
+		}
+	}
+
+	/* ── Animations ── */
+	@keyframes splash-fade-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes splash-pulse-dot {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.4;
+		}
+	}
+
+	@keyframes pulse {
+		50% {
+			opacity: 0.65;
+		}
+	}
+
+	.animate-pulse-fast {
+		animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	/* ── Scrollbar ── */
+	#boot-log::-webkit-scrollbar {
+		width: 3px;
+	}
+
+	#boot-log::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	#boot-log::-webkit-scrollbar-thumb {
+		background: #30363d;
+		border-radius: 2px;
+	}
+
+	html.light #boot-log::-webkit-scrollbar-thumb {
+		background: #d0d7de;
+	}
+</style>

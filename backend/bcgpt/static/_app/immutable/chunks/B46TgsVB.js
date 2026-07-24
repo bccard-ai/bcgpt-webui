@@ -1,0 +1,2 @@
+import{a as s}from"./DYlrbfPw.js";import"./BOp0WA3K.js";const i=async(e,t,a)=>{const n=new FormData;n.append("file",t);const l=new URLSearchParams;(a==null?void 0:a.process)!==void 0&&l.set("process",String(a.process));const c=`/files/${l.toString()?`?${l.toString()}`:""}`;return s.post(c,n,{token:e})},o=async(e,t,a)=>s.post(`/files/${t}/data/content/update`,{content:a},{token:e}),p=async(e,t)=>s.del(`/files/${t}`,void 0,{token:e}),f=async e=>s.del("/files/all",void 0,{token:e});export{o as a,p as b,f as d,i as u};
+//# sourceMappingURL=B46TgsVB.js.map

@@ -1,0 +1,2 @@
+import{a}from"./DYlrbfPw.js";const n=async(o,t)=>a.post("/prompts/create",{...t,command:`/${t.command}`},{token:o}),e=async(o="")=>a.get("/prompts/",{token:o}),r=async(o="")=>a.get("/prompts/list",{token:o}),c=async(o,t)=>a.get(`/prompts/command/${t}`,{token:o}),p=async(o,t)=>a.post(`/prompts/command/${t.command}/update`,{...t,command:`/${t.command}`},{token:o}),d=async(o,t)=>{const m=t.charAt(0)==="/"?t.slice(1):t;return a.del(`/prompts/command/${m}/delete`,void 0,{token:o})};export{c as a,r as b,n as c,d,e as g,p as u};
+//# sourceMappingURL=DWAxuxs0.js.map

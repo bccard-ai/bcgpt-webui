@@ -1,0 +1,2 @@
+import{H as c,I as o,J as l,K as b,N as p,O as v,P as g,Q as f,R as m}from"./wmDFjFr_.js";import{B as y}from"./Dhm_xSnn.js";function R(_,d,h=!1){var n;o&&(n=m,l());var s=new y(_),u=h?b:0;function t(a,r){if(o){var e=p(n);if(a!==parseInt(e.substring(1))){var i=v();g(i),s.anchor=i,f(!1),s.ensure(a,r),f(!0);return}}s.ensure(a,r)}c(()=>{var a=!1;d((r,e=0)=>{a=!0,t(e,r)}),a||t(-1,null)},u)}export{R as i};
+//# sourceMappingURL=BS8SMZ8w.js.map

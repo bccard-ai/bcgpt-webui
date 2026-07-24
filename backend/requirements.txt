@@ -1,0 +1,167 @@
+# Pinned for Docker image reproducibility.
+# For the latest dependency versions, see pyproject.toml.
+#
+# Versions synced with pyproject.toml (as of 2026-06-01).
+# Starlette pinned for CVE-2026-48710 (Host-Header bypass).
+
+fastapi==0.136.3
+starlette>=1.1.0
+uvicorn[standard]==0.49.0
+pydantic==2.13.4
+python-multipart==0.0.32
+
+python-socketio==5.16.2
+websocket-client>=1.8.0  # ComfyUI image generation (utils/images/comfyui.py)
+
+requests==2.34.2
+aiohttp==3.14.0
+brotli
+async-timeout
+aiocache
+aiofiles
+
+sqlalchemy==2.0.50
+alembic==1.18.4
+peewee==3.17.9
+peewee-migrate==1.15.0
+psycopg2-binary==2.9.12
+pgvector==0.4.2
+PyMySQL==1.2.0
+bcrypt>=5.0.0,<6.0.0
+
+pymongo
+redis
+boto3==1.43.24
+
+argon2-cffi==25.1.0
+APScheduler==3.11.2
+
+# NOTE: RestrictedPython was removed — it was never integrated into the codebase.
+# Tool/function code execution (plugin.py) runs with full process privileges.
+# This is acceptable because only admins can create tools/functions.
+
+loguru==0.7.3
+asgiref==3.11.1
+
+# AI libraries
+openai
+anthropic
+google-generativeai==0.8.6
+tiktoken
+
+langchain>=1.3.0,<2.0.0
+langchain-core>=1.4.0,<2.0.0
+langchain-community>=0.4.2
+langchain-text-splitters>=1.1.2,<2.0.0
+langchain-classic>=1.0.7,<2.0.0
+langsmith>=0.8.0
+
+fake-useragent==2.2.0
+pymilvus==3.0.0
+qdrant-client>=1.12,<2.0
+opensearch-py==3.2.0
+playwright==1.60.0 # Caution: version must match docker-compose.playwright.yaml
+elasticsearch==9.4.1
+
+
+transformers>=4.57.6
+sentence-transformers>=5.5.0,<6.0.0
+colbert-ai==0.2.22
+einops==0.8.2
+
+
+ftfy==6.3.1
+pypdf==6.13.0
+fpdf2==2.8.7
+pymdown-extensions==10.21.3
+docx2txt==0.9
+python-pptx==1.0.2
+nltk==3.9.4
+Markdown==3.10.2
+pypandoc==1.17
+openpyxl==3.1.5
+pyxlsb==1.0.10
+xlrd==2.0.2
+validators==0.35.0
+psutil
+sentencepiece>=0.2.1
+azure-ai-documentintelligence==1.0.2
+
+pillow==12.2.0
+opencv-python-headless==4.13.0.92
+rapidocr-onnxruntime==1.2.3
+rank-bm25==0.2.2
+
+PyJWT[crypto]==2.13.0
+authlib==1.7.2
+pyotp==2.10.0
+segno==1.6.6
+
+black==26.5.1
+langfuse>=4.7.0,<5.0.0
+youtube-transcript-api>=1.2.0,<2.0.0
+pytube==15.0.0
+
+extract_msg
+ddgs>=9.0.0,<10.0.0
+
+## Google Drive
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+
+googleapis-common-protos==1.75.0
+google-cloud-storage>=3.0,<4
+
+azure-identity==1.25.3
+azure-storage-blob==12.29.0
+
+## LDAP
+ldap3==2.9.1
+
+## Firecrawl
+firecrawl-py>=4.28.0,<5.0.0
+
+## Trace
+opentelemetry-api==1.42.1
+opentelemetry-sdk==1.42.1
+opentelemetry-exporter-otlp==1.42.1
+opentelemetry-instrumentation==0.63b1
+opentelemetry-instrumentation-fastapi==0.63b1
+opentelemetry-instrumentation-sqlalchemy==0.63b1
+opentelemetry-instrumentation-redis==0.63b1
+opentelemetry-instrumentation-requests==0.63b1
+opentelemetry-instrumentation-logging==0.63b1
+opentelemetry-instrumentation-httpx==0.63b1
+opentelemetry-instrumentation-aiohttp-client==0.63b1
+
+## GCP storage emulator
+gcp-storage-emulator>=2024.8.3
+
+## JSON
+orjson>=3.10
+
+## Security floors for transitive dependencies (raise as advisories confirm).
+## `>=` (not `==`) so the resolver can still satisfy other constraints.
+defusedxml>=0.7.1          # XXE-safe stdlib XML parsing (see retrieval/loaders/main.py)
+urllib3>=2.7.0             # decompression/redirect hardening
+cryptography>=46.0.7       # transitive crypto fixes
+lxml>=5.3.1                # libxml2 parser fixes
+idna>=3.15                 # Unicode/domain DoS hardening
+jinja2>=3.1.6              # sandbox attr filter bypass
+werkzeug>=3.1.8            # Windows device-name path handling fixes
+torch>=2.6.0               # safer torch.load default for checkpoint handling
+marshmallow>=3.26.2        # Schema.load(many=True) DoS fix
+filelock>=3.20.3           # lock-file symlink race fixes
+flask>=3.1.3               # session/key-rotation fixes
+fonttools>=4.60.2          # font parsing fix
+gitpython>=3.1.50          # clone/fetch/path handling fixes
+h2>=4.3.0                  # HTTP/2 stream reset handling fix
+joblib>=1.5.3              # lock audit floor
+mako>=1.3.12               # template escaping fix
+pyarrow>=23.0.1            # Arrow IPC/parsing fix
+pyasn1>=0.6.3              # decoder DoS fix
+python-dotenv>=1.2.2       # parser fix
+ujson>=5.12.1              # JSON parser/serializer DoS fixes
+
+mcp>=1.28,<2.0           # Model Context Protocol SDK (admin MCP menu; install-verified 1.28.1)

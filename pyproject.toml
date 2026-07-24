@@ -1,0 +1,214 @@
+[project]
+name = "bcgpt"
+description = "BCGPT"
+authors = [
+    { name = "BC Card AI Team", email = "seen@bccard.com" },
+]
+maintainers = [
+    { name = "BC Card AI Team", email = "seen@bccard.com" },
+]
+license = { file = "LICENSE" }
+dependencies = [
+    "fastapi==0.136.3",
+    "uvicorn[standard]==0.49.0",
+    "pydantic==2.13.4",
+    "python-multipart==0.0.32",
+
+    "python-socketio==5.16.2",
+
+    "requests==2.34.2",
+    "aiohttp==3.14.0",
+    "brotli",
+    "async-timeout",
+    "aiocache",
+    "aiofiles",
+
+    "orjson>=3.10",
+
+    "sqlalchemy==2.0.50",
+    "alembic==1.18.4",
+    "peewee==3.17.9",
+    "peewee-migrate==1.15.0",
+    "psycopg2-binary==2.9.12",
+    "pgvector==0.4.2",
+    "PyMySQL==1.2.0",
+    "bcrypt>=5.0.0,<6.0.0",
+
+    "pymongo",
+    "redis",
+    "boto3==1.43.24",
+
+    "argon2-cffi==25.1.0",
+    "APScheduler==3.11.2",
+
+    "loguru==0.7.3",
+    "asgiref==3.11.1",
+
+    "openai",
+    "anthropic",
+    "google-generativeai==0.8.6",
+    "tiktoken",
+
+    "langchain>=1.3.0,<2.0.0",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-community>=0.4.2",
+    "langchain-text-splitters>=1.1.2,<2.0.0",
+    "langchain-classic>=1.0.7,<2.0.0",
+    "langsmith>=0.8.0",
+
+    "fake-useragent==2.2.0",
+    "pymilvus>=3.0,<4",
+    "qdrant-client>=1.12,<2.0",
+    "opensearch-py==3.2.0",
+    "playwright==1.60.0",
+    "elasticsearch==9.4.1",
+
+    "transformers>=4.57.6",
+    "sentence-transformers>=5.5.0,<6.0.0",
+    "torch>=2.6.0",
+    "colbert-ai==0.2.22",
+    "einops==0.8.2",
+
+    "ftfy==6.3.1",
+    "pypdf>=6.0,<7",
+    "fpdf2==2.8.7",
+    "pymdown-extensions==10.21.3",
+    "docx2txt==0.9",
+    "python-pptx==1.0.2",
+    "nltk==3.9.4",
+    "Markdown==3.10.2",
+    "pypandoc==1.17",
+    "openpyxl==3.1.5",
+    "pyxlsb==1.0.10",
+    "xlrd==2.0.2",
+    "validators==0.35.0",
+    "psutil",
+    "sentencepiece>=0.2.1",
+    "azure-ai-documentintelligence==1.0.2",
+
+    "pillow==12.2.0",
+    "opencv-python-headless==4.13.0.92",
+    "rapidocr-onnxruntime==1.2.3",
+    "rank-bm25==0.2.2",
+
+    "PyJWT[crypto]==2.13.0",
+    "authlib==1.7.2",
+    "pyotp==2.10.0",
+    "segno==1.6.6",
+
+    "black==26.5.1",
+    "langfuse>=4.7.0,<5.0.0",
+    "youtube-transcript-api>=1.2.0,<2.0.0",
+    "pytube==15.0.0",
+
+    "extract_msg",
+    "ddgs>=9.0.0,<10.0.0",
+
+    "google-api-python-client",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
+
+    "googleapis-common-protos==1.75.0",
+    "google-cloud-storage>=3.0,<4",
+
+    "azure-identity==1.25.3",
+    "azure-storage-blob==12.29.0",
+
+    "ldap3==2.9.1",
+
+    "firecrawl-py>=4.28.0,<5.0.0",
+
+    "gcp-storage-emulator>=2024.8.3",
+
+    # Security floors for transitive dependencies.
+    "defusedxml>=0.7.1",
+    "urllib3>=2.7.0",
+    "cryptography>=46.0.7",
+    "lxml>=5.3.1",
+    "idna>=3.15",
+    "jinja2>=3.1.6",
+    "werkzeug>=3.1.8",
+    "marshmallow>=3.26.2",
+    "filelock>=3.20.3",
+    "flask>=3.1.3",
+    "fonttools>=4.60.2",
+    "gitpython>=3.1.50",
+    "h2>=4.3.0",
+    "joblib>=1.5.3",
+    "mako>=1.3.12",
+    "pyarrow>=23.0.1",
+    "pyasn1>=0.6.3",
+    "python-dotenv>=1.2.2",
+    "ujson>=5.12.1",
+
+    # MCP (Model Context Protocol) — admin MCP menu (install-verified 1.28.1).
+    "mcp>=1.28,<2.0",
+]
+readme = "README.md"
+requires-python = ">= 3.11"
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Chat",
+    "Topic :: Multimedia",
+]
+
+[project.scripts]
+bcgpt = "bcgpt:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "docker~=7.1.0",
+    "pytest>=9.0.3,<10",
+    "moto[s3]>=5.0.26",
+]
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "package.json"
+pattern = '"version":\s*"(?P<version>[^"]+)"'
+
+[tool.hatch.build.hooks.custom]  # keep this for reading hooks from `hatch_build.py`
+
+[tool.hatch.build.targets.wheel]
+sources = ["backend"]
+exclude = [
+    ".dockerignore",
+    ".gitignore",
+    ".bcgpt_secret_key",
+    "dev.sh",
+    "requirements.txt",
+    "start.sh",
+    "start_windows.bat",
+    "bcgpt.db",
+]
+force-include = { "CHANGELOG.md" = "bcgpt/CHANGELOG.md", build = "bcgpt/frontend" }
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.svg,package-lock.json,i18n,*.lock,*.css,*-bundle.js,locales,example-doc.txt,emoji-shortcodes.json'
+check-hidden = true
+# ignore-regex = ''
+ignore-words-list = 'ans'
+
+# Enables `python -m pytest backend/bcgpt/test/unit` from repo root.
+# Canonical command remains `make test-backend-unit` (see Makefile).
+# Fixes the ModuleNotFoundError documented in PRODUCTION_HARDENING_LOG Iteration 3.
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/bcgpt/test/unit"]
+addopts = "-q"

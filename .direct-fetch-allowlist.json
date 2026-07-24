@@ -1,0 +1,106 @@
+{
+	"version": "v1.0-2026-06-24",
+	"description": "Allowlist of direct fetch() calls that are exempt from ApiClient migration. See docs/generated/API_CLIENT_DIRECT_FETCH_CATALOG.md for rationale.",
+	"exclude_files": ["src/lib/apis/client.ts"],
+	"entries": [
+		{
+			"file": "src/lib/apis/index.ts",
+			"line": 218,
+			"snippet": "const res = await fetch(`${url}/openapi.json`, {",
+			"family": "external-connector",
+			"auth_mode": "none",
+			"response_mode": "json",
+			"reason": "External tool server OpenAPI spec fetch; URL is user-supplied tool-server endpoint, not our backend"
+		},
+		{
+			"file": "src/lib/apis/index.ts",
+			"line": 371,
+			"snippet": "const res = await fetch(finalUrl, requestOptions);",
+			"family": "external-connector",
+			"auth_mode": "custom",
+			"response_mode": "raw",
+			"reason": "External tool server execution proxy; URL and headers are user-configured per tool-server"
+		},
+		{
+			"file": "src/lib/apis/openai/index.ts",
+			"line": 55,
+			"snippet": "const res = await fetch(`${url}/models`, {",
+			"family": "provider-direct",
+			"auth_mode": "bearer",
+			"response_mode": "json",
+			"reason": "Provider direct /models endpoint; base URL is caller-supplied (supports custom OpenAI-compatible endpoints)"
+		},
+		{
+			"file": "src/lib/apis/openai/index.ts",
+			"line": 96,
+			"snippet": "const res = await fetch(`${url}/models`, {",
+			"family": "provider-direct",
+			"auth_mode": "bearer",
+			"response_mode": "json",
+			"reason": "Provider direct /models with custom base URL override (getModels variant)"
+		},
+		{
+			"file": "src/lib/apis/openai/index.ts",
+			"line": 125,
+			"snippet": "const res = await fetch(`${url}/chat/completions`, {",
+			"family": "provider-stream",
+			"auth_mode": "bearer",
+			"response_mode": "stream",
+			"reason": "Provider streaming /chat/completions for generateSearchQuery; uses ReadableStream consumer, not JSON"
+		},
+		{
+			"file": "src/lib/apis/openai/index.ts",
+			"line": 148,
+			"snippet": "const res = await fetch(`${url}/chat/completions`, {",
+			"family": "provider-stream",
+			"auth_mode": "bearer",
+			"response_mode": "stream",
+			"reason": "Provider streaming /chat/completions for generateTitle; uses ReadableStream consumer, not JSON"
+		},
+		{
+			"file": "src/lib/components/chat/Chat.svelte",
+			"line": 482,
+			"snippet": "const fileResponse = await fetch(fileData.url, fetchOptions);",
+			"family": "third-party-file",
+			"auth_mode": "bearer",
+			"response_mode": "blob",
+			"reason": "Google Drive file download from chat attachment; uses OAuth token in Authorization header"
+		},
+		{
+			"file": "src/lib/components/common/ImagePreview.svelte",
+			"line": 32,
+			"snippet": "fetch(url)",
+			"family": "preview-ui",
+			"auth_mode": "none",
+			"response_mode": "blob",
+			"reason": "Browser-only image preview/download; fetches object URL or remote image for UI display, no API contract"
+		},
+		{
+			"file": "src/lib/utils/google-drive-picker.ts",
+			"line": 247,
+			"snippet": "const response = await fetch(downloadUrl, { headers });",
+			"family": "third-party-file",
+			"auth_mode": "bearer",
+			"response_mode": "blob",
+			"reason": "Google Drive file download via Google-issued downloadUrl with OAuth bearer token"
+		},
+		{
+			"file": "src/lib/utils/onedrive-file-picker.ts",
+			"line": 197,
+			"snippet": "const response = await fetch(fileInfoUrl, {",
+			"family": "third-party-file",
+			"auth_mode": "bearer",
+			"response_mode": "json",
+			"reason": "Microsoft Graph API call; external third-party service with its own auth (OAuth access token)"
+		},
+		{
+			"file": "src/lib/utils/onedrive-file-picker.ts",
+			"line": 210,
+			"snippet": "const downloadResponse = await fetch(downloadUrl);",
+			"family": "third-party-file",
+			"auth_mode": "none",
+			"response_mode": "blob",
+			"reason": "OneDrive pre-authenticated download URL; Microsoft-signed short-lived URL, no auth header needed"
+		}
+	]
+}

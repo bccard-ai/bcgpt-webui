@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.0.0] - 2026-06-05
+## [1.0.0] - 2026-07-01
 
 BCGPT WebUI v1.0.0 consolidates all changes since the initial v1.0.0 release (2026-05-20). The project was forked from [Open WebUI](https://github.com/open-webui/open-webui) v0.6.0 and completely redesigned to comply with Korea's AI Basic Act, financial-sector AI guidelines, and CVE vulnerability remediation — battle-tested in BC Card's enterprise environment.
 
@@ -192,7 +192,10 @@ Advanced — evidence-level processing:
 
 #### 📜 License & Legal
 
-- 📜 **License change to Apache 2.0**: Project license changed to Apache License 2.0. The original Open WebUI v0.6.0 code retains its BSD 3-Clause License with attribution to Timothy Jaeryang Baek. A NOTICE file was added for fork attribution and third-party license compliance.
+- 📜 **Pure Apache License 2.0**: Entire codebase licensed under Apache License 2.0. Originally forked from Open WebUI v0.6.0 (BSD 3-Clause) by Timothy Jaeryang Baek — all code has been independently rewritten by BC Card. The BSD 3-Clause License text is preserved in the `NOTICE` file for historical fork attribution only and does not apply to any code in this repository.
+- 🐳 **Dockerfile OCI LABEL**: `org.opencontainers.image.licenses` set to `Apache-2.0`.
+- 📦 **package.json Metadata**: Added `license`, `author`, `homepage`, `repository`, `bugs` fields.
+- 🔧 **REUSE Specification v3.3 Compliance**: `reuse lint` passes 9,767 / 9,767 files (100%). REUSE.toml uses `version = 1` schema with directory-level SPDX annotations covering backend (`Apache-2.0`), frontend (`Apache-2.0`), config files (`CC0-1.0`), and BAAI/bge-m3 model weights (`MIT`). Fixed critical bugs: `version = 3` → `version = 1` (schema version, not spec version); removed invalid top-level `precedence` key.
 - 🎨 **Provider-based model icons in Evaluations**: Admin > Evaluations page now displays provider-specific icons for arena models (OpenAI, Gemini, Claude, Ollama, vLLM, DeepSeek, Perplexity, GLM) matching the Models settings page. Unrecognized models fall back to the BC Card logo.
 
 ### Changed

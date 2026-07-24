@@ -2,468 +2,343 @@
 
 # BCGPT WebUI
 
-**Enterprise-Grade Self-Hosted AI Platform with Advanced Agent Orchestration**
+**A self-hosted AI workspace for chat, retrieval, agents, and governance**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-![GitHub last commit](https://img.shields.io/github/last-commit/bccard-ai/bcgpt-webui?color=red)
+
+English | [한국어](README_KR.md)
 
 </div>
 
----
-
-## About
-
-**BCGPT WebUI** is an enterprise-grade, self-hosted AI platform powered by **BC Card's AI Native technologies** — a suite of production-hardened AI capabilities developed and battle-tested at one of Korea's largest financial companies. It features a built-in multi-agent orchestration engine, 12-module advanced RAG pipeline (HyDE, query expansion, step-back prompting, RRF fusion, multi-hop retrieval, CRAG, document grading, evidence reconciliation), quality assurance pipeline, and 18 search provider integrations. Designed from the ground up for production reliability, it supports vLLM, Ollama, OpenAI, Azure, Claude, Gemini, and any OpenAI-compatible API — with full RAG capabilities, reasoning model support (o1/o3/o4/GPT-5), and DAG-based agent workflows.
-
-Originally forked from [Open WebUI](https://github.com/open-webui/open-webui) v0.6.0, BCGPT WebUI has since been **completely rebuilt** — frontend rewritten in Svelte 5 with Tailwind CSS 4, backend restructured as the `bcgpt` Python package, and an entirely new agent module, RAG pipeline, and quality assurance system added from scratch. Today, virtually every layer has been replaced with production-grade implementations — making BCGPT WebUI a fundamentally different platform, not just a fork.
-
-### BC Card's AI Native Technologies
-
-BCGPT WebUI is where BC Card's **AI Native** strategy meets the open-source community. Through years of operating AI services at enterprise scale in the financial sector, BC Card has developed a set of core AI technologies — from advanced RAG pipelines and multi-agent orchestration to quality assurance and regulatory compliance — that go far beyond what typical LLM wrappers provide. These are not theoretical designs or prototype features. They are technologies that process real financial workloads, serve real users under strict SLAs, and comply with Korea's AI Basic Act and financial sector regulations.
-
-BCGPT WebUI applies these AI Native technologies end-to-end:
-
-| Technology Area            | BC Card AI Native Capability                                                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Advanced RAG**           | 12-module production pipeline — HyDE, query expansion, step-back, RRF fusion, rule-based + LLM reranking, CRAG, doc grading, multi-hop |
-| **Agent Orchestration**    | Multi-agent coordination (Sequential, Parallel, MoA, Debate, Voting, Consensus) with DAG workflow engine                               |
-| **Quality Assurance**      | 4-stage answer verification — claim decomposition, grounding, document grading, entailment scoring                                     |
-| **Korean AI Optimization** | Korean-optimized embeddings (BAAI/bge-m3), reranker (BAAI/bge-reranker-v2-m3), Korean NLP normalization, Naver search                  |
-| **Compliance & Security**  | Korean AI Basic Act compliance, FSC financial AI guidelines, RBAC, audit logging, CSRF protection                                      |
-| **Reasoning Models**       | Native support for OpenAI reasoning models (o1, o3, o4, GPT-5) with automatic payload adaptation                                       |
+![BCGPT WebUI](demo.png)
 
-> **Why open source?** We believe that powerful AI infrastructure should be accessible to everyone — not locked behind proprietary licenses. BC Card's internal open-moai platform proved that AI Native technologies — production-grade RAG, multi-agent orchestration, quality assurance — can dramatically improve AI answer quality at enterprise scale. By contributing these technologies to BCGPT WebUI under an open license, we enable anyone to access the same AI capabilities that power real financial services. Whether you're a startup building an AI-powered product, an enterprise outfitting internal services, or a researcher experimenting with agent architectures, BCGPT WebUI gives you the freedom to use, modify, and extend the platform without restrictions. Fork it, customize it, make it yours.
+## Overview
 
-![BCGPT WebUI Demo](./demo.png)
+BCGPT WebUI is a self-hosted web application for working with large language models. It combines a SvelteKit frontend with a FastAPI backend and supports local Ollama models, OpenAI-compatible APIs, Gemini, and Claude connections. The application includes chat, knowledge bases and retrieval, web search, workspace assets, agent workflows, administration, audit views, and optional governance features.
 
----
+It began from Open WebUI v0.6.0 and is now maintained as the `bcgpt` Python package and a Svelte 5 application. See [CHANGELOG.md](CHANGELOG.md) for release history and [NOTICE](NOTICE) for upstream notices.
 
-## What Makes BCGPT Different
+> [!IMPORTANT]
+> BCGPT WebUI is software, not a compliance certification or a guarantee of model accuracy. Advanced retrieval, agent, security, FinOps, and compliance capabilities must be enabled, configured, tested, and operated for the deployment where they are used. Many are off by default.
 
-Open WebUI served as a useful starting point, but its architecture — Svelte 4, Tailwind 3, basic function calling, no quality assurance — reflects a hobby-project mindset that falls short of enterprise demands. BCGPT WebUI rebuilt it from the ground up with **production reliability, advanced agent orchestration, and AI Native quality assurance**. Here's what sets BCGPT apart:
+## Contents
 
-### Fundamentally Rebuilt Architecture
+- [What is included](#what-is-included)
+- [Quick start](#quick-start)
+- [Deployment options](#deployment-options)
+- [Configuration and operations](#configuration-and-operations)
+- [Development](#development)
+- [Architecture](#architecture)
+- [Testing and quality checks](#testing-and-quality-checks)
+- [Documentation and support](#documentation-and-support)
 
-| Layer              | Open WebUI (0.6.0)     | BCGPT WebUI                                                                                                                                                    |
-| ------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend Framework | Svelte 4               | **Svelte 5** (runes: `$state`, `$derived`, `$effect`, `$props`)                                                                                                |
-| CSS Framework      | Tailwind CSS 3         | **Tailwind CSS 4** (`@import 'tailwindcss'` + PostCSS)                                                                                                         |
-| Build Tool         | Vite 5                 | **Vite 6**                                                                                                                                                     |
-| Backend Package    | `open_webui`           | **`bcgpt`** — fully restructured with `agent/`, `providers/`, `utils/`                                                                                         |
-| Agent System       | Basic function calling | **Full multi-agent orchestration** with DAG workflows                                                                                                          |
-| Quality Assurance  | None                   | **4-stage quality pipeline** (claim verification, grounding, document grading, entailment scoring)                                                             |
-| RAG Pipeline       | Basic vector search    | **12-module production RAG** (HyDE, query expansion, step-back, RRF fusion, rule-based + LLM reranking, CRAG, doc grading, evidence reconciliation, multi-hop) |
-| Search Integration | 10 providers           | **18 providers** including Naver, Exa, Kagi, Perplexity, Mojeek, SerpApi, Bocha                                                                                |
-| Model Support      | Standard OpenAI/Ollama | Standard + **reasoning models** (o1, o3, o4, GPT-5) with automatic payload adaptation                                                                          |
-| Security           | Basic auth             | **Enterprise-grade** — CSRF, RBAC, audit logging, SSRF protection, account lockout, 7-layer AI security scanner pipeline, emergency stop                       |
-| Compliance         | None                   | **Korean AI Basic Act + FSC financial AI guidelines**                                                                                                          |
-| License            | BSD-3 (brand locked)   | **Apache 2.0** for all new code — modify freely                                                                                                                |
-
-### Advanced Agent System
-
-BCGPT WebUI features a purpose-built **Agent Module** that goes far beyond simple function calling:
-
-- **Multi-Agent Orchestration** — Six coordination strategies for complex tasks:
-  - `Sequential` — Agents process in chain, each building on the previous output
-  - `Parallel` — Independent agents run concurrently, results merged
-  - `Mixture of Agents (MoA)` — Multiple agents propose, aggregator synthesizes
-  - `Debate` — Agents argue opposing viewpoints, judge resolves
-  - `Voting` — Democratic consensus across multiple model responses
-  - `Consensus` — Iterative refinement until agents converge
-
-- **DAG Workflow Engine** — Define complex agent workflows as directed acyclic graphs:
-  - Topological layer execution with concurrent sibling nodes
-  - Per-node error strategies (stop / continue / retry / fallback)
-  - Built-in node types: RAG search, web search, LLM call, tool call
-  - Extensible node registry for custom handlers
-
-- **ReAct Tool Loop** — Autonomous N-hop reasoning loop:
-  - Models learn a JSON tool-call protocol via system prompts
-  - Supports both synthetic tool calls and native function calling
-  - Automatic tool chaining across hops with safety caps
+## What is included
 
-- **Quality Pipeline** — Four-stage answer verification:
-  - **Claim Decomposition** — Breaks responses into verifiable claims
-  - **Answer Grounding** — Checks if claims are supported by retrieved context
-  - **Document Grading** — Assesses source document relevance and quality
-  - **Entailment Scoring** — Measures logical consistency between claims and evidence
-  - Weighted overall quality score (grounding 40%, document quality 20%, entailment 40%)
+### Chat and workspace
 
-### Extended Web Search (18 Providers)
+- Multi-provider chat with streaming responses, Markdown/LaTeX rendering, conversation history, folders, tags, shared links, channels, memories, prompt templates, file uploads, and PWA assets.
+- Server-side providers for Ollama, OpenAI-compatible APIs, Gemini, and Claude. An OpenAI-compatible endpoint can be used for compatible gateways and model servers.
+- Admin and workspace screens for model definitions, knowledge bases, prompts, tools, functions, users, groups, connections, audit data, evaluations, and RAG management.
+- Image, audio, task, pipeline, and model-management API surfaces where their respective providers and settings are configured.
 
-BCGPT WebUI extends web search with providers tailored for global and Korean markets:
+### Knowledge, retrieval, and web search
 
-| Provider     | Region Focus                                          |
-| ------------ | ----------------------------------------------------- |
-| **Naver**    | Korean web search (news, blog, web, cafe, kin, local) |
-| Google PSE   | Global                                                |
-| SearXNG      | Self-hosted meta-search                               |
-| Brave Search | Privacy-focused global                                |
-| DuckDuckGo   | Privacy-focused global                                |
-| Bing         | Global                                                |
-| Exa          | AI-optimized semantic search                          |
-| Tavily       | AI research                                           |
-| Serper       | Google SERP API                                       |
-| Serpstack    | Google SERP API                                       |
-| SearchApi    | Multi-engine                                          |
-| Serply       | SERP proxy                                            |
-| Kagi         | Premium search                                        |
-| Perplexity   | AI-powered search                                     |
-| Mojeek       | Independent index                                     |
-| Jina Search  | Neural search                                         |
-| **SerpApi**  | Google SERP API (structured data)                     |
-| **Bocha**    | AI-powered search (Chinese market)                    |
+- File and URL ingestion, knowledge-base management, hybrid retrieval, configurable embedding and reranking models, and support for Qdrant, Milvus, pgvector, OpenSearch, and Elasticsearch vector stores.
+- Optional retrieval components include HyDE, query expansion, step-back prompting, reciprocal-rank fusion, rule-based and LLM reranking, CRAG, document grading, evidence reconciliation, multi-hop retrieval, parent/child chunking, contextual retrieval, semantic caching, cross-encoder reranking, GraphRAG, MMR, ingestion quality scoring, and column profiling.
+- Web-search adapters for Bing, Bocha, Brave, DuckDuckGo, Exa, Google Programmable Search, Jina, Kagi, Mojeek, Naver, Perplexity, SearchAPI, SearXNG, SerpApi, Serper, Serply, Serpstack, and Tavily. Provider credentials and the `ENABLE_RAG_WEB_SEARCH` switch are required before web search can be used.
 
-### Reasoning Model Support
+### Agents and quality controls
 
-Built-in adapter for OpenAI's reasoning model family:
+- Three model autonomy levels: `suggest`, `assistant`, and `operator`. The operator level uses a bounded ReAct-style tool loop.
+- A DAG workflow engine with ten node types: user input, RAG search, web search, context merge, conditional, LLM call, API call, text processor, PII processor, and response. Nodes support stop, continue, retry, and fallback error strategies.
+- Multi-agent patterns: sequential, parallel, debate, consensus, voting, mixture of agents (MoA), and council.
+- Optional answer-quality stages for claim decomposition, grounding, document grading, entailment scoring, citation auditing, and hallucination detection.
 
-- **Automatic detection** — Identifies o1, o3, o4-mini, and GPT-5 models
-- **Payload transformation** — Strips incompatible sampling params (`temperature`, `top_p`) that reasoning models reject
-- **Reasoning effort control** — Supports `reasoning_effort` parameter for fine-grained control over reasoning depth
+`MULTI_AGENT_ENABLED` and `AGENT_QUALITY_PIPELINE_ENABLED` default to `false`. The workflow engine is enabled by default, but its behavior still depends on the configured model, tools, retrieval, and web-search services. The implementation details and API routes are documented in [backend/bcgpt/agent/README.md](backend/bcgpt/agent/README.md).
 
-### Enterprise Security & Regulatory Compliance
+### Identity, security, and governance
 
-BCGPT WebUI is designed to meet the compliance requirements of Korea's financial sector. Deployed at BC Card, the platform implements safeguards aligned with the following regulatory frameworks:
+- Authentication, user roles, groups, API keys, OAuth/OIDC, LDAP, trusted-header SSO, TOTP MFA, RS256/JWKS JWT signing, and SCIM 2.0 provisioning are present in the codebase. Individual integrations are configuration-dependent.
+- CSRF protection, baseline security headers, rate limiting, audit logging, file-signature validation, SSRF defenses for outbound fetching, and configurable content and model guardrails are available.
+- Optional controls include token/cost tracking and budgets, chat retention/anonymization, AI-interaction audit records, AI transparency messaging, emergency stop, SIEM webhook forwarding, and a compliance module for model inventory, impact assessments, approval gates, incidents, fairness tests, RAG provenance, data-subject requests, and vendor records.
 
-#### Korean AI Basic Act (인공지능 기본법, Law No. 20676)
+Do not enable a control merely because it exists. Review its settings, data-retention implications, external dependencies, and authorization model first. In particular, tool/function code executes with the server process's privileges; by default only administrators may author it. Do not set `TOOLS_ALLOW_NON_ADMIN_CODE=true` without appropriate operating-system or container isolation.
 
-Effective January 22, 2026 — the Framework Act on the Development of Artificial Intelligence and Establishment of Trust mandates transparency, safety, and accountability for AI services:
+## Quick start
 
-- **AI Transparency Banner** — Configurable disclosure that responses are AI-generated, satisfying Article 31 content labeling requirements for generative AI services
-- **Advance User Notification** — Users are informed they are interacting with AI, meeting the advance notice obligation for generative AI operators
-- **Emergency Stop** — One-click system-wide halt of all AI interactions, satisfying the emergency control requirement for high-impact AI (Article 34)
-- **Quality Pipeline** — Four-stage answer verification (claim grounding, document grading, entailment scoring) supports the safety and reliability measures required under Articles 33-35
-
-#### Financial Sector AI Guidelines (금융분야 AI 가이드라인)
-
-Aligned with the FSC's Seven Principles for AI in Finance (금융 AI 7대 원칙, December 2024) and the integrated financial AI guidelines (expected April 2026):
-
-- **Governance** — CEO-level AI ethics committee structure; independent risk management separate from AI development
-- **Human Oversight** — Clear employee accountability with differentiated intervention rules by risk level
-- **Reliability** — Regular model performance management; fairness and bias testing; explainability to stakeholders
-- **Financial Stability** — Emergency controls and backup model capability; supervisory authority reporting
-- **Good Faith** — Advance notification of AI use to all customers; error reporting; consumer choice protection
-
-#### Security Controls
-
-- **CSRF protection** on all state-changing endpoints
-- **Role-Based Access Control (RBAC)** with granular permissions
-- **User group management** for organizational hierarchies
-- **Security event logging** for audit trails
-- **Emergency Stop** — One-click kill switch to immediately halt all AI interactions system-wide
-- **AI Security Scanner Pipeline** — Seven-layer defense against AI-specific threats:
-  - **Prompt Injection Scanner** — Detects and blocks injection attempts in user inputs
-  - **Jailbreak Scanner** — Identifies jailbreak and bypass attempts
-  - **PII Scanner** — Detects personal identifiable information with configurable masking modes
-  - **Toxicity Scanner** — Filters harmful content with customizable word lists
-  - **Secrets Scanner** — Prevents leakage of API keys, tokens, and credentials
-  - **Output Filter** — Scans and filters model responses for safety
-  - **LLM Scanner** — LLM-based classification for nuanced threat detection
-
----
-
-## Key Features
-
-### Core Chat
-
-- **Effortless Setup** — Docker, Kubernetes (kubectl, kustomize, helm), or pip install
-- **Multi-Provider LLM Support** — Ollama, OpenAI, Azure, Claude, Gemini, and any OpenAI-compatible API (LMStudio, GroqCloud, Mistral, OpenRouter)
-- **User Memories** — Persistent personal memories stored in vector DB for contextual personalization across conversations
-- **Responsive Design** — Seamless experience across Desktop, Laptop, and Mobile
-- **Progressive Web App (PWA)** — Native app-like experience on mobile with installable app manifest
-- **Full Markdown & LaTeX** — Rich rendering for technical content
-- **Voice & Video Call** — Hands-free communication with integrated STT/TTS
-
-### Knowledge & Retrieval
-
-BC Card's internal **open-moai** platform was designed to deliver production-grade AI services at enterprise scale in Korea's financial sector. Through BCGPT WebUI, we are contributing these battle-tested RAG technologies back to the open-source community — so that everyone, not just large enterprises, can benefit from the same retrieval quality that powers real financial AI services.
-
-#### Production RAG Pipeline
-
-The RAG pipeline in BCGPT WebUI implements the full retrieval quality stack from BC Card's open-moai, organized into four stages:
-
-**Pre-Retrieval** — Query understanding before search:
-
-- **HyDE (Hypothetical Document Embeddings)** — LLM generates a hypothetical answer document, embeds it, and uses it for retrieval instead of the raw query. Includes Korean/English normalization (code fence removal, length capping).
-- **Query Expansion** — LLM generates N alternative phrasings of the same question, deduplicates them, and searches across all variants.
-- **Step-Back Prompting** — Detects Korean/English questions and generates a broader, more abstract version to improve recall on conceptual queries.
-
-**Retrieval** — Multi-signal search:
-
-- **Hybrid Search + RRF Fusion** — Combines BM25 (keyword) and vector (semantic) search results using Reciprocal Rank Fusion (`1/(k+rank+1)`), with configurable per-track weights and top-K selection. Replaces the naive EnsembleRetriever with precise rank-based scoring.
-- **Multi-Hop Retrieval** — Automatically detects complex multi-part questions, decomposes them into ordered sub-queries via LLM (with dependency tracking), retrieves for each, and merges results.
-
-**Post-Retrieval** — Result quality refinement:
-
-- **Rule-Based Reranking** — 5-component heuristic scoring: exact match, title hit, TF similarity, position bonus, coverage ratio.
-- **LLM Reranking** — LLM scores document relevance on a 1-10 scale with fallback parsing for robust JSON extraction.
-- **CRAG Quality Assessment** — Composite retrieval quality score (similarity 45%, keyword overlap 25%, coverage 15%, diversity 15%) with sufficient/partial/insufficient verdicts.
-- **Document Grading** — Per-document relevance assessment via heuristic + LLM grading (correct / ambiguous / incorrect), filtering out incorrect documents.
-
-**Advanced** — Evidence-level processing:
-
-- **Evidence Reconciliation** — Jaccard-based redundancy detection, topic grouping, and numeric/negation conflict identification across retrieved documents.
-
-#### Agent-Level RAG Configuration
-
-Each agent can override global RAG settings independently:
-
-| Setting         | Description                          | Default |
-| --------------- | ------------------------------------ | ------- |
-| `k`             | Number of documents to retrieve      | 4       |
-| `r`             | Reranker top-K                       | 4       |
-| `hybrid`        | Enable hybrid (BM25 + vector) search | off     |
-| `k_reranker`    | Documents to pass through reranker   | off     |
-| `query_rewrite` | Enable query rewrite                 | off     |
-| `hyde`          | Enable HyDE                          | off     |
-| `rag_template`  | Custom RAG prompt template           | default |
-
-#### RAG Management
-
-- **Knowledge Bases** — Create, configure, and manage document collections with access control
-- **Vector DB Dashboard** — Real-time monitoring dashboard showing embedding model info (engine + model), connection status, cluster health, total documents/vectors, and per-collection statistics
-- **Collection Management** — Browse, inspect, create, and delete Qdrant collections directly from the admin UI
-- **Collection Detail Views** — Full document listing and metadata for each collection
-- **Embedding Engine Switching** — Dynamically switch between Local (Sentence-Transformers), Ollama, and OpenAI embedding engines from the admin UI without restart
-- **Local RAG Integration** — Upload documents directly or add to your library, query with `#` command
-- **Web Search for RAG** — 18 search providers with results injected into conversations
-- **Web Browsing** — Fetch and incorporate web content via `#` + URL
-
-#### RAG Configuration Environment Variables
-
-All advanced RAG features are **disabled by default** and can be enabled individually via environment variables:
-
-| Variable                              | Description                    | Default |
-| ------------------------------------- | ------------------------------ | ------- |
-| `RAG_HYDE_ENABLED`                    | Enable HyDE                    | `false` |
-| `RAG_HYDE_MODEL`                      | LLM model for HyDE generation  | —       |
-| `RAG_QUERY_EXPANSION_ENABLED`         | Enable query expansion         | `false` |
-| `RAG_QUERY_EXPANSION_N`               | Number of expanded queries     | `3`     |
-| `RAG_STEP_BACK_ENABLED`               | Enable step-back prompting     | `false` |
-| `RAG_RRF_K`                           | RRF constant k                 | `60`    |
-| `RAG_RULE_BASED_RERANKING_ENABLED`    | Enable rule-based reranking    | `false` |
-| `RAG_LLM_RERANKING_ENABLED`           | Enable LLM reranking           | `false` |
-| `RAG_CRAG_ENABLED`                    | Enable CRAG quality assessment | `false` |
-| `RAG_DOC_GRADING_ENABLED`             | Enable document grading        | `false` |
-| `RAG_EVIDENCE_RECONCILIATION_ENABLED` | Enable evidence reconciliation | `false` |
-| `RAG_MULTI_HOP_ENABLED`               | Enable multi-hop retrieval     | `false` |
-| `RAG_MULTI_QUERY_WEIGHT`              | Weight for multi-query results | `0.5`   |
-
-#### Embedding Engine Support
-
-BCGPT WebUI supports multiple embedding backends that can be switched dynamically from the admin UI:
-
-| Engine                            | Description                                                   | Requirements                    |
-| --------------------------------- | ------------------------------------------------------------- | ------------------------------- |
-| **Local (Sentence-Transformers)** | Default. Uses locally downloaded sentence-transformer models  | No external API needed          |
-| **Ollama**                        | Uses Ollama's embedding endpoint                              | Running Ollama instance         |
-| **OpenAI**                        | Uses OpenAI embedding models (e.g., `text-embedding-3-small`) | `OPENAI_API_KEY`                |
-| **OpenAI-compatible**             | Any API that follows the OpenAI embeddings format             | Configurable base URL + API key |
-
-### Creation & Automation
-
-- **Model Builder** — Create custom Ollama models, characters, and agents via Web UI
-- **Python Function Calling** — Built-in code editor for BYOF (Bring Your Own Function) tools
-- **Image Generation** — AUTOMATIC1111, ComfyUI (local), or DALL-E (cloud)
-- **Many Models Conversations** — Chat with multiple models simultaneously
-- **Agent Workflows** — Define and run multi-step agent pipelines with DAG orchestration
-- **Workspace** — Centralized management for agents, functions, knowledge bases, prompts, and tools
-- **Evaluations** — Arena mode with leaderboard, user feedback collection, and model comparison
-
-### Administration & Compliance
-
-- **Role-Based Access Control** — Fine-grained permissions and user group management
-- **Multilingual (i18n)** — Full internationalization support with 53 locales and community translations
-- **Security Scanner Pipeline** — 7-layer AI threat defense (prompt injection, jailbreak, PII, toxicity, secrets, output filter, LLM scanner) with emergency stop
-- **Audit Dashboard** — Real-time monitoring dashboard with event statistics, severity breakdown, and compliance summary
-- **Audit Logs** — Searchable, filterable audit log viewer with pagination and time-range filtering
-- **Personal Data Tracking** — Dedicated view for personal data access records with subject and action details
-- **Anomaly Detection** — Automated detection of suspicious activities with severity classification (critical, high, medium, low)
-- **Audit Settings** — Configurable logging levels, retention policies, and one-click purge controls
-- **AI Transparency** — Configurable disclosure banners for AI-generated content (AI Basic Act Article 31)
-- **Regulatory Compliance** — Aligned with Korean AI Basic Act (Law No. 20676) and FSC financial AI guidelines
-
----
-
-## How to Install
-
-### Installation via Python pip
-
-Requires **Python 3.11+**.
+The quickest local deployment starts BCGPT WebUI and Ollama together. Docker Desktop (or Docker Engine) with the Compose v2 plugin is required.
 
 ```bash
-pip install bcgpt
-bcgpt serve
+git clone https://github.com/bccard-ai/bcgpt-webui.git
+cd bcgpt-webui
+
+# Keep this value stable. Changing it invalidates existing sessions.
+export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+
+docker compose up -d --build
+curl --fail http://localhost:8090/healthz
 ```
 
-Access at [http://localhost:8090](http://localhost:8090)
-
-### Docker Compose (Recommended)
-
-Choose the configuration that fits your deployment:
-
-| File                                | Use Case                           | Services                 |
-| ----------------------------------- | ---------------------------------- | ------------------------ |
-| `docker-compose.yml`                | All-in-one with Ollama             | BCGPT + Ollama           |
-| `docker-compose.without-ollama.yml` | Use external LLM APIs              | BCGPT only               |
-| `docker-compose.with-db.yml`        | Production with PostgreSQL + Redis | BCGPT + Postgres + Redis |
-| `docker-compose.dev.yml`            | Development with hot reload        | Frontend + Backend       |
-
-#### All-in-One (BCGPT + Ollama)
+Open <http://localhost:8090>, complete the initial onboarding flow, and configure a model. The bundled Ollama service does not automatically download a model; pull one explicitly, then refresh the model list in the UI:
 
 ```bash
-docker compose up -d
+docker exec -it ollama ollama pull <model-name>
 ```
 
-Access at [http://localhost:8090](http://localhost:8090). Ollama runs internally — no separate setup needed.
+The named Docker volumes `bcgpt-data` and `ollama-data` retain application data and Ollama models. This all-in-one quick start is a local convenience profile; use the PostgreSQL profile below as the standard database deployment baseline. Stopping or recreating the containers does not remove these volumes unless you explicitly remove them.
 
-> [!TIP]
-> For GPU support, uncomment the `deploy.resources.reservations.devices` section in `docker-compose.yml`.
-> Requires [Nvidia Container Toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/).
+## Deployment options
 
-#### Standalone (External LLM APIs)
+### Docker Compose files
+
+| File                                                                   | Intended use                                       | Services                       |
+| ---------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------ |
+| [docker-compose.yml](docker-compose.yml)                               | Local all-in-one deployment                        | BCGPT WebUI, Ollama            |
+| [docker-compose.without-ollama.yml](docker-compose.without-ollama.yml) | External model provider or remote Ollama           | BCGPT WebUI                    |
+| [docker-compose.with-db.yml](docker-compose.with-db.yml)               | Starting point for PostgreSQL and Redis deployment | BCGPT WebUI, PostgreSQL, Redis |
+| [docker-compose.dev.yml](docker-compose.dev.yml)                       | Docker-based hot-reload development                | Vite frontend, FastAPI backend |
+
+All Compose files build the local [Dockerfile](Dockerfile). The runtime listens on port `8090`, stores local application data at `/app/backend/data`, and exposes `/healthz` for a process liveness check.
+
+### External provider or remote Ollama
+
+Use the standalone profile when BCGPT WebUI should not start its own Ollama container:
 
 ```bash
-# With OpenAI
-OPENAI_API_KEY=your_key docker compose -f docker-compose.without-ollama.yml up -d
+export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export OPENAI_API_KEY="replace-with-your-key"
 
-# With remote Ollama
-OLLAMA_BASE_URL=https://your-ollama-server docker compose -f docker-compose.without-ollama.yml up -d
+docker compose -f docker-compose.without-ollama.yml up -d --build
 ```
 
-#### Production (PostgreSQL + Redis)
+For a remote Ollama server, provide an address reachable from the BCGPT container:
 
 ```bash
-# Change default passwords!
-POSTGRES_PASSWORD=your_secure_password docker compose -f docker-compose.with-db.yml up -d
+export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export OLLAMA_BASE_URL="https://ollama.example.internal"
+
+docker compose -f docker-compose.without-ollama.yml up -d --build
 ```
 
-> [!WARNING]
-> Change `POSTGRES_PASSWORD` before deploying to production. The default credentials are for local development only.
+`OPENAI_API_BASE_URL` can point to an OpenAI-compatible service. For multiple OpenAI-compatible or Ollama connections, use the semicolon-separated `OPENAI_API_BASE_URLS`/`OPENAI_API_KEYS` and `OLLAMA_BASE_URLS` settings documented in [docs/CONFIG_REFERENCE.md](docs/CONFIG_REFERENCE.md).
 
-#### Development (Hot Reload)
+### PostgreSQL and Redis
+
+The `with-db` profile is a useful starting point, not a complete production runbook. It requires a database password and configures secure session cookies:
+
+```bash
+export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export POSTGRES_PASSWORD="replace-with-a-long-unique-password"
+
+docker compose -f docker-compose.with-db.yml up -d --build
+curl --fail http://localhost:8090/readyz
+```
+
+Before production use, place the app behind TLS, set a stable secret through your secret manager, restrict network access, choose backup/restore procedures for database, uploads, and vector data, and validate an upgrade and rollback in a non-production environment. The in-repository deployment review records known boundaries in [docs/DEPLOYMENT_RELEASE_SURFACE_INVENTORY_2026-06-23.md](docs/DEPLOYMENT_RELEASE_SURFACE_INVENTORY_2026-06-23.md).
+
+### Kubernetes and Helm
+
+The repository includes a Helm chart under [kubernetes/helm](kubernetes/helm). Review and override its image, secrets, storage, probes, and environment settings before use:
+
+```bash
+helm upgrade --install bcgpt ./kubernetes/helm \
+  --set secrets.BCGPT_SECRET_KEY="replace-with-a-stable-secret"
+```
+
+Render the chart before applying it:
+
+```bash
+helm template bcgpt ./kubernetes/helm
+```
+
+The chart's own [README](kubernetes/helm/README.md) also points to a separately hosted chart location. Treat the local chart as source-controlled deployment configuration and verify the chart/version you intend to operate.
+
+### Manual image run
+
+```bash
+docker build -t bcgpt-webui .
+docker volume create bcgpt-data
+
+docker run -d --name bcgpt \
+  -p 8090:8090 \
+  -e BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')" \
+  -v bcgpt-data:/app/backend/data \
+  bcgpt-webui
+```
+
+Pass provider credentials with `-e` flags or, preferably, your platform's secret mechanism. Do not use [run-compose.sh](run-compose.sh) as a canonical deployment method: it refers to Compose override files that are not currently present in this repository.
+
+## Configuration and operations
+
+### Essential settings
+
+| Setting                                  | Purpose                        | Operational note                                                                                                                                                      |
+| ---------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BCGPT_SECRET_KEY`                       | Signs sessions and JWTs        | Required when authentication is enabled; use a long, random, stable secret.                                                                                           |
+| `DATABASE_URL`                           | Primary database URL           | PostgreSQL is the standard deployment database. The code retains a SQLite fallback in `DATA_DIR` only when this value is absent, for local/development compatibility. |
+| `OLLAMA_BASE_URL`                        | One Ollama endpoint            | The all-in-one Compose profile sets this to its `ollama` service.                                                                                                     |
+| `OPENAI_API_KEY` / `OPENAI_API_BASE_URL` | OpenAI or compatible API       | Use plural URL/key settings for multiple connections.                                                                                                                 |
+| `CORS_ALLOW_ORIGIN`                      | Allowed browser origins        | Configure explicit origins when frontend and backend have different origins.                                                                                          |
+| `BCGPT_SESSION_COOKIE_SECURE`            | Secure cookie flag             | Set to `true` behind HTTPS; the development launcher overrides it for localhost HTTP.                                                                                 |
+| `RAG_FILE_MAX_SIZE`                      | Maximum upload size in MB      | Default is `100`.                                                                                                                                                     |
+| `VECTOR_DB`                              | Retrieval vector-store backend | Default is `qdrant`; configure its service/credentials separately where needed.                                                                                       |
+
+[.env.example](.env.example) contains a deliberately limited, commented sample. The full source-backed configuration catalog—including lifecycle, defaults, provider settings, storage, observability, and feature flags—is [docs/CONFIG_REFERENCE.md](docs/CONFIG_REFERENCE.md).
+
+Many application values are `PersistentConfig` settings: environment values seed the initial stored configuration, while subsequent administrator changes are persisted. Treat environment changes as deployment inputs, not as proof that they are the active runtime values. Confirm important settings through the administrator UI or the relevant API after deployment.
+
+### Health and API endpoints
+
+| Endpoint     | Meaning                                                                       |
+| ------------ | ----------------------------------------------------------------------------- |
+| `/health`    | Basic application response                                                    |
+| `/health/db` | Basic response with a database query                                          |
+| `/healthz`   | Process liveness                                                              |
+| `/livez`     | Liveness with database check                                                  |
+| `/readyz`    | Readiness with database and configured vector-store checks; Redis is optional |
+
+FastAPI's interactive API documentation (`/docs`) and OpenAPI document (`/openapi.json`) are enabled only when `ENV=dev`. They are not exposed by the normal production configuration.
+
+### Security checklist
+
+- Keep `BCGPT_AUTH=true` outside of disposable local experiments and generate a unique `BCGPT_SECRET_KEY` before every new environment.
+- Terminate TLS at a reverse proxy or load balancer, set secure cookie flags, and limit direct access to the backend port, database, Redis, and provider services.
+- If using trusted-header SSO, set `BCGPT_AUTH_TRUSTED_PROXY_IPS` to the actual proxy IPs/CIDRs. Do not trust an identity header from an unrestricted network path.
+- Store API keys, SCIM tokens, OAuth/LDAP credentials, and object-store credentials in a secret manager rather than committing them to `.env` files.
+- Review user permissions, model access rules, API-key restrictions, tool/function authoring, web-search access, retention, audit logging, and external integrations before inviting users.
+- Test feature flags and failure modes in a staging environment. Some security, scanner, compliance, quality, and observability controls are opt-in or have deployment-specific dependencies.
+
+For the supported security-reporting channel and project policy, see [docs/SECURITY.md](docs/SECURITY.md).
+
+## Development
+
+### Local development
+
+Requirements: Python 3.11+ and Bun 1.3+.
+
+Install Bun first. On macOS or Linux, use Bun's official installer:
+
+```bash
+curl -fsSL https://bun.com/install | bash
+bun --version
+```
+
+On Windows PowerShell, run `powershell -c "irm bun.sh/install.ps1|iex"`, then open a new terminal and verify with `bun --version`. See the [Bun installation guide](https://bun.com/docs/installation) for package-manager and platform-specific options.
+
+Create and activate a Python virtual environment, then install the backend requirements. The activated environment makes the `python` command used by the development scripts resolve to the correct interpreter.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r backend/requirements.txt
+```
+
+On Windows PowerShell, create and activate it with `py -3.11 -m venv .venv` and `.venv\Scripts\Activate.ps1` before running the same `python -m pip` commands.
+
+Install the frontend dependencies and start both services:
+
+```bash
+bun install
+bun run dev
+```
+
+This command fetches the required Pyodide asset, starts Vite at <http://localhost:5173>, and starts the FastAPI backend at <http://localhost:8090>. The development launcher also checks and installs backend requirements when needed, so the explicit Pip step above can be skipped when you prefer automatic setup. It creates a stable development signing key under `node_modules/.cache`, enables backend reload, and Vite proxies `/api`, `/ollama`, `/openai`, and `/ws` to the backend.
+
+Use the following commands when you need individual processes or checks:
+
+```bash
+# frontend only
+bun run dev:frontend
+
+# backend only (with the same dependency/key helper used by bun run dev)
+bun run dev:backend
+
+# static build and local preview
+bun run build
+bun run preview
+```
+
+The Docker hot-reload profile is also available:
 
 ```bash
 docker compose -f docker-compose.dev.yml up
 ```
 
-Frontend runs at [http://localhost:5173](http://localhost:5173) (Vite dev server with HMR).  
-Backend runs at [http://localhost:8090](http://localhost:8090) (uvicorn with `--reload`).
+### Project layout
 
-### Docker Run (Manual)
+| Path                  | Contents                                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `src/`                | SvelteKit application, UI components, API clients, i18n, and styles                                  |
+| `backend/bcgpt/`      | FastAPI application, models, routers, providers, retrieval, agents, security, and compliance modules |
+| `backend/bcgpt/test/` | Backend unit and integration test suites                                                             |
+| `kubernetes/helm/`    | Helm chart source                                                                                    |
+| `scripts/`            | Development, config-inventory, route-inventory, and quality helpers                                  |
+| `docs/`               | Configuration reference, operating plans, inventories, and policies                                  |
 
-> [!WARNING]
-> Always include `-v bcgpt:/app/backend/data` to persist your database.
+## Architecture
 
-```bash
-# Build the image
-docker build -t bcgpt .
+The built application is served by the FastAPI process in production; it is not a separate Node server. Local development uses Vite as a frontend development server and proxies backend traffic to FastAPI.
 
-# Run standalone
-docker run -d -p 8090:8090 \
-  -v bcgpt:/app/backend/data \
-  --name bcgpt --restart always \
-  bcgpt
-
-# With OpenAI API
-docker run -d -p 8090:8090 \
-  -e OPENAI_API_KEY=your_key \
-  -v bcgpt:/app/backend/data \
-  --name bcgpt --restart always \
-  bcgpt
-
-# Connect to host Ollama
-docker run -d -p 8090:8090 \
-  --add-host=host.docker.internal:host-gateway \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  -v bcgpt:/app/backend/data \
-  --name bcgpt --restart always \
-  bcgpt
+```text
+Browser / PWA
+   │
+   ├─ production: FastAPI serves the built SvelteKit application
+   └─ development: Vite (:5173) proxies API and WebSocket traffic
+                         │
+                         ▼
+                 FastAPI / bcgpt (:8090)
+                  ├─ auth, users, chats, files, audit, admin APIs
+                  ├─ provider adapters: Ollama, OpenAI-compatible, Gemini, Claude
+                  ├─ retrieval: storage, embeddings, vector DB, web search
+                  └─ agent, quality, security, and optional compliance modules
+                         │
+                         ▼
+             PostgreSQL (standard) · optional Redis · vector/object stores
 ```
 
-### Troubleshooting
+## Testing and quality checks
 
-If the container can't reach Ollama at `127.0.0.1:11434`, use `--network=host`:
-
-```bash
-docker run -d --network=host \
-  -v bcgpt:/app/backend/data \
-  -e OLLAMA_BASE_URL=http://127.0.0.1:11434 \
-  --name bcgpt --restart always \
-  bcgpt
-```
-
-### Keeping Docker Up-to-Date
+Run these commands from the repository root:
 
 ```bash
-docker compose pull && docker compose up -d
+# frontend tests, Svelte diagnostics, and lint checks
+bun run test:frontend
+bun run check
+bun run lint:frontend:check
+
+# backend unit tests
+make test-backend-unit
+
+# combined default test target
+make test
+
+# source-derived inventories and regression checks
+bun run check:routes
+bun run check:ratchet
+bun run check:fetch
+make config-inventory
 ```
 
-### Offline Mode
+`make test-backend-integration` requires its Docker/PostgreSQL integration environment; `make test-backend-integration-collect` performs collection only. Use `bun run format:check` before submitting documentation or frontend changes and `bun run format` only when you intend to apply formatting changes across its configured file set.
 
-```bash
-export HF_HUB_OFFLINE=1
-```
+## Documentation and support
+
+| Topic                         | Document                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Full configuration catalog    | [docs/CONFIG_REFERENCE.md](docs/CONFIG_REFERENCE.md)                                                               |
+| Agent subsystem and endpoints | [backend/bcgpt/agent/README.md](backend/bcgpt/agent/README.md)                                                     |
+| Contributing                  | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)                                                                       |
+| Security policy               | [docs/SECURITY.md](docs/SECURITY.md)                                                                               |
+| Release/deployment review     | [docs/DEPLOYMENT_RELEASE_SURFACE_INVENTORY_2026-06-23.md](docs/DEPLOYMENT_RELEASE_SURFACE_INVENTORY_2026-06-23.md) |
+| Change history                | [CHANGELOG.md](CHANGELOG.md)                                                                                       |
+
+Report bugs and feature requests through the [issue tracker](https://github.com/bccard-ai/bcgpt-webui/issues). For contribution guidance, read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) before opening a pull request.
+
+## License and attribution
+
+BCGPT WebUI is licensed under the [Apache License 2.0](LICENSE). It originated from [Open WebUI](https://github.com/open-webui/open-webui) v0.6.0; the required upstream notices are retained in [NOTICE](NOTICE).
 
 ---
 
-## Tech Stack
-
-| Category | Technology   | Version     |
-| -------- | ------------ | ----------- |
-| Frontend | Svelte       | 5.x (runes) |
-| Frontend | SvelteKit    | 2.61        |
-| Frontend | Tailwind CSS | 4.x         |
-| Frontend | Vite         | 6.x         |
-| Frontend | TypeScript   | 5.9         |
-| Backend  | Python       | 3.11+       |
-| Backend  | FastAPI      | 0.136       |
-| Backend  | Pydantic     | 2.13        |
-| Backend  | LangChain    | 1.3.x       |
-| Testing  | Vitest       | 4.x         |
-| Testing  | Cypress      | 15.x        |
-| Linting  | ESLint       | 10.x        |
-| Linting  | Ruff         | Python      |
-
----
-
-## Support
-
-Questions, suggestions, or need assistance? [Open an issue](https://github.com/bccard-ai/bcgpt-webui/issues) or reach out to us at **seen@bccard.com** — we'd love to hear from you.
-
-## Acknowledgments
-
-BCGPT WebUI originated as a fork of [Open WebUI](https://github.com/open-webui/open-webui) v0.6.0 by [Timothy Jaeryang Baek](https://github.com/tjbck). While the codebase has been almost entirely rewritten, we gratefully acknowledge Open WebUI's role as the starting point of this project.
-
-The advanced RAG pipeline (HyDE, query expansion, step-back prompting, RRF fusion, rule-based + LLM reranking, CRAG, document grading, evidence reconciliation, multi-hop retrieval) was developed for BC Card's internal **open-moai** platform and is contributed to the open-source community under Apache 2.0 through BCGPT WebUI — so that individuals, startups, and organizations of any size can access the same production-grade retrieval quality that powers enterprise financial AI services.
-
-## License
-
-BCGPT WebUI uses a **dual-license** structure designed to maximize your freedom:
-
-### BC Card's Code — Apache License 2.0
-
-All new code, modifications, and additions made by BC Card — including the advanced RAG pipeline, agent orchestration, quality assurance, Korean AI optimization, compliance features, and the entire restructured `bcgpt` backend — are licensed under the **[Apache License 2.0](LICENSE)**.
-
-This means you can:
-
-- ✅ **Use** — Run for any purpose, commercial or otherwise
-- ✅ **Modify** — Change, adapt, and customize to your needs without restriction
-- ✅ **Distribute** — Share original or modified versions
-- ✅ **Rebrand** — Use under your own brand name for your own deployments
-- ✅ **Patent grant** — Automatic patent license from BC Card contributors
-
-No brand lock-in. For BC Card's Apache 2.0 code, no attribution requirements beyond the license notice. No restrictions on how you use it.
-
-### Original Open WebUI Code — BSD 3-Clause License
-
-The original code from [Open WebUI](https://github.com/open-webui/open-webui) v0.6.0 by Timothy Jaeryang Baek retains its **BSD 3-Clause License**. This applies only to the portions that were not rewritten by BC Card. Those components retain their original copyright and license notices — you cannot remove the original attribution from those specific files.
-
-### In Practice
-
-The vast majority of BCGPT WebUI's codebase — the agent module, RAG pipeline, quality system, Korean optimizations, compliance controls, and all architectural improvements — is Apache 2.0. Fork it, rebrand it, ship it. It's yours.
-
-See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for full details.
-
-Copyright 2026 BC Card
+[한국어 README 보기](README_KR.md)

@@ -1,0 +1,46 @@
+# BCGPT WebUI Development Environment
+# Usage: docker compose -f docker-compose.dev.yml up
+#
+# Hot-reload development setup. Source changes are reflected immediately.
+# Frontend: http://localhost:5173 (Vite dev server)
+# Backend:  http://localhost:8090 (uvicorn with --reload)
+
+services:
+  frontend:
+    image: oven/bun:1-alpine
+    container_name: bcgpt-frontend-dev
+    working_dir: /app
+    command: sh -c "bun install && bun run dev -- --host"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - frontend-node-modules:/app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8090
+    restart: unless-stopped
+
+  backend:
+    image: python:3.11-slim
+    container_name: bcgpt-backend-dev
+    working_dir: /app/backend
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt
+      && python -m uvicorn bcgpt.main:app --host 0.0.0.0 --port 8090 --reload"
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./backend:/app/backend
+      - ./build:/app/build
+    environment:
+      - DATA_DIR=/app/backend/data
+      - FRONTEND_BUILD_DIR=/app/build
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  frontend-node-modules:
+    name: bcgpt-frontend-node-modules

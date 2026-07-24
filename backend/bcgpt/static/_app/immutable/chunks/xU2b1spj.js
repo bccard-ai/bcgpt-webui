@@ -1,0 +1,2 @@
+import"./Bzak7iHL.js";import{t as i}from"./wmDFjFr_.js";import{a as m,g as p}from"./BKZDP7KO.js";import{s as n,a as l,c}from"./CHFC5TJK.js";import{p as s}from"./Dy-S0HPn.js";var f=p('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5"></path></svg>');function k(r,o){let e=s(o,"className",3,"w-4 h-4"),a=s(o,"strokeWidth",3,"1.5");var t=f();i(()=>{n(t,"stroke-width",a()),l(t,0,c(e()))}),m(r,t)}export{k as C};
+//# sourceMappingURL=xU2b1spj.js.map

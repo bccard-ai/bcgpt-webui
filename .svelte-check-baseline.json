@@ -1,0 +1,763 @@
+{
+	"version": "1.0.0",
+	"baseline_date": "2026-06-24",
+	"tool": "svelte-check",
+	"command": "bunx svelte-check --output machine",
+	"total_errors": 2160,
+	"total_warnings": 1,
+	"files_with_problems": 188,
+	"per_file": {
+		"src/lib/components/chat/Chat.svelte": {
+			"errors": 181,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/WebSearch.svelte": {
+			"errors": 89,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar.svelte": {
+			"errors": 78,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/ModelEditor.svelte": {
+			"errors": 68,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput.svelte": {
+			"errors": 54,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Connections.svelte": {
+			"errors": 53,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/RecursiveFolder.svelte": {
+			"errors": 52,
+			"warnings": 0
+		},
+		"src/routes/+layout.svelte": {
+			"errors": 51,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Knowledge/KnowledgeBase.svelte": {
+			"errors": 49,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Models/Manage/ManageOllama.svelte": {
+			"errors": 47,
+			"warnings": 1
+		},
+		"src/lib/components/admin/Settings/Pipelines.svelte": {
+			"errors": 44,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/ResponseMessage.svelte": {
+			"errors": 43,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Audio.svelte": {
+			"errors": 39,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/VoiceRecording.svelte": {
+			"errors": 38,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Documents.svelte": {
+			"errors": 33,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages.svelte": {
+			"errors": 31,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Evaluations/Leaderboard.svelte": {
+			"errors": 29,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/Commands/Knowledge.svelte": {
+			"errors": 29,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/General.svelte": {
+			"errors": 27,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ModelSelector/Selector.svelte": {
+			"errors": 27,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/CallOverlay.svelte": {
+			"errors": 27,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Functions.svelte": {
+			"errors": 25,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Evaluations.svelte": {
+			"errors": 25,
+			"warnings": 0
+		},
+		"src/routes/(app)/+layout.svelte": {
+			"errors": 25,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/ChatItem.svelte": {
+			"errors": 24,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models.svelte": {
+			"errors": 23,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Audio.svelte": {
+			"errors": 22,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Images.svelte": {
+			"errors": 21,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/Knowledge/Selector.svelte": {
+			"errors": 21,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Agent.svelte": {
+			"errors": 20,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Overview/Node.svelte": {
+			"errors": 20,
+			"warnings": 0
+		},
+		"src/lib/apis/index.ts": {
+			"errors": 19,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Evaluations/ArenaModelModal.svelte": {
+			"errors": 17,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Controls/Valves.svelte": {
+			"errors": 17,
+			"warnings": 0
+		},
+		"src/lib/utils/google-drive-picker.ts": {
+			"errors": 16,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Models.svelte": {
+			"errors": 16,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/General.svelte": {
+			"errors": 16,
+			"warnings": 0
+		},
+		"src/routes/s/[id]/+page.svelte": {
+			"errors": 16,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/message-tts.svelte.ts": {
+			"errors": 15,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/UserList.svelte": {
+			"errors": 15,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Tools.svelte": {
+			"errors": 15,
+			"warnings": 0
+		},
+		"src/lib/components/common/Valves.svelte": {
+			"errors": 14,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/FiltersSelector.svelte": {
+			"errors": 14,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Messages/Message.svelte": {
+			"errors": 14,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/common/ValvesModal.svelte": {
+			"errors": 13,
+			"warnings": 0
+		},
+		"src/lib/components/channel/MessageInput.svelte": {
+			"errors": 13,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Placeholder.svelte": {
+			"errors": 13,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/SearchInput.svelte": {
+			"errors": 13,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Messages/Message/ReactionPicker.svelte": {
+			"errors": 12,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Account.svelte": {
+			"errors": 12,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/ChatMenu.svelte": {
+			"errors": 12,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/Markdown/MarkdownTokens.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/ActionsSelector.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Models/ConfigureModelsModal.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Rag.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/UserList/UserChatsModal.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ChatPlaceholder.svelte": {
+			"errors": 11,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/ToolsSelector.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/UserMessage.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Overview.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Chats.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/chat/SettingsModal.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Prompts.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/routes/(app)/admin/functions/edit/+page.svelte": {
+			"errors": 10,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/Markdown/AlertRenderer.svelte": {
+			"errors": 9,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/ContentRenderer.svelte": {
+			"errors": 9,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Interface.svelte": {
+			"errors": 9,
+			"warnings": 0
+		},
+		"src/routes/(app)/admin/functions/create/+page.svelte": {
+			"errors": 9,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/tools/edit/+page.svelte": {
+			"errors": 9,
+			"warnings": 0
+		},
+		"src/lib/utils/chat-history.ts": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/UserList/AddUserModal.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Artifacts.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Connections.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/+layout.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/+layout.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/tools/create/+page.svelte": {
+			"errors": 8,
+			"warnings": 0
+		},
+		"src/lib/apis/chats/index.ts": {
+			"errors": 7,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Interface.svelte": {
+			"errors": 7,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/Commands.svelte": {
+			"errors": 7,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Navbar/Menu.svelte": {
+			"errors": 7,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/prompts/edit/+page.svelte": {
+			"errors": 7,
+			"warnings": 0
+		},
+		"src/lib/components/ChangelogModal.svelte": {
+			"errors": 6,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Database.svelte": {
+			"errors": 6,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ToolServersModal.svelte": {
+			"errors": 6,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ShareChatModal.svelte": {
+			"errors": 6,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ChatControls.svelte": {
+			"errors": 6,
+			"warnings": 0
+		},
+		"src/lib/components/common/RichTextInput/AutoCompletion.js": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/admin/RagManager/VectorDBCollectionDetail.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Models/ModelList.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Models/ManageModelsModal.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Evaluations/Model.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/Groups/EditGroupModal.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Thread.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Tools/ToolkitEditor.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/routes/(app)/admin/+page.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/routes/auth/+page.svelte": {
+			"errors": 5,
+			"warnings": 0
+		},
+		"src/lib/utils/crypto.ts": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/utils/chat-import.ts": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/apis/auths/index.ts": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/chat/chat-uploads.svelte.ts": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/utils/__tests__/chat-history.test.ts": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/Knowledge.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Models/Capabilities.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/Groups.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Messages/Message/ProfilePreview.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Messages.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/InputMenu.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Overview/Flow.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Tools.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/+page.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/agents/create/+page.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/agents/edit/+page.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/prompts/create/+page.svelte": {
+			"errors": 4,
+			"warnings": 0
+		},
+		"src/lib/components/common/Dropdown.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Functions/FunctionMenu.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/admin/RagManager/KnowledgeBaseDetail.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/common/SVGPanZoom.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/Markdown.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings/Security.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Functions/FunctionEditor.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Channel.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/Commands/Prompts.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ContentRenderer/FloatingButtons.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/MultiResponseMessages.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/chat/ModelSelector.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/Folders.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Overlay/AccountPending.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/chats/+page.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/personalization/+page.svelte": {
+			"errors": 3,
+			"warnings": 0
+		},
+		"src/lib/workers/kokoro.worker.ts": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Evaluations/Feedbacks.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Evaluations.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/common/RichTextInput.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/common/AccessControl.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/common/CodeEditor.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/Markdown/MarkdownInlineTokens.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/app/AppSidebar.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/common/Banner.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/Message.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Tags.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Controls/Controls.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/About.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Tools/Connection.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Knowledge.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Knowledge/CreateKnowledgeBase.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Prompts/PromptEditor.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/account/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/audio/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/connections/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/general/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/interface/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/settings/tools/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/agents/+page.svelte": {
+			"errors": 2,
+			"warnings": 0
+		},
+		"src/lib/utils/clipboard.ts": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/apis/streaming/index.ts": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/utils/webVitals.ts": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Audit.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/RagManager.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/CodeBlock.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/common/ImagePreview.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/common/Collapsible.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/common/Textarea.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Advanced/AdvancedParams.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Settings.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/UserList/EditUserModal.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/Groups/Users.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/admin/Users/Groups/GroupItem.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/common/Loader.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/FilesOverlay.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/UserMenu.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/channel/Navbar.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/MessageInput/Commands/Models.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/RateComment.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/ResponseMessage/WebSearchResults.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Messages/CitationsModal.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Navbar.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/chat/Settings/Personalization/ManageModal.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/common/Folder.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Navbar.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/layout/Sidebar/ArchivedChatsModal.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Prompts/PromptMenu.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/Tools/ToolMenu.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/lib/components/workspace/common/AccessControlModal.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/routes/+error.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/routes/(app)/admin/functions/+page.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/routes/(app)/workspace/knowledge/+page.svelte": {
+			"errors": 1,
+			"warnings": 0
+		},
+		"src/routes/watch/+page.svelte": {
+			"errors": 1,
+			"warnings": 0
+		}
+	}
+}

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: bcgpt
+description: BCGPT WebUI - Production-grade AI Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/bccard-ai/bcgpt-webui
+sources:
+  - https://github.com/bccard-ai/bcgpt-webui
+maintainers:
+  - name: bcgpt

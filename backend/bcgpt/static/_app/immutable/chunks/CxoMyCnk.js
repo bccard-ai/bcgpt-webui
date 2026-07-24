@@ -1,0 +1,2 @@
+import{ad as o,H as _,ae as g,aB as p,I as a,aj as v,ay as i,Q as l,P as r,R as m,aw as E}from"./wmDFjFr_.js";function w(d,n){let t=null,f=a;var s;if(a){t=m;for(var e=E(document.head);e!==null&&(e.nodeType!==v||e.data!==d);)e=i(e);if(e===null)l(!1);else{var y=i(e);e.remove(),r(y)}}a||(s=document.head.appendChild(o()));try{_(()=>{var u=g(()=>n(s));u.f|=p})}finally{f&&(l(!0),r(t))}}export{w as h};
+//# sourceMappingURL=CxoMyCnk.js.map

@@ -1,0 +1,2 @@
+import{a as s}from"./DYlrbfPw.js";const o=async(a="")=>s.get("/evaluations/config",{token:a}),n=async(a,e)=>s.post("/evaluations/config",{...e},{token:a}),d=async(a="")=>s.get("/evaluations/feedbacks/all",{token:a}),l=async(a="")=>s.get("/evaluations/feedbacks/all/export",{token:a}),i=async(a,e)=>s.post("/evaluations/feedback",{...e},{token:a}),b=async(a,e,t)=>s.post(`/evaluations/feedback/${e}`,{...t},{token:a}),f=async(a,e)=>s.del(`/evaluations/feedback/${e}`,void 0,{token:a});export{o as a,n as b,i as c,f as d,l as e,d as g,b as u};
+//# sourceMappingURL=B3j889S8.js.map
