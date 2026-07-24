@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -105,6 +105,14 @@ const destinationRsyncArgs = [
 
 try {
 	run('rsync', sourceRsyncArgs);
+
+	// Hatch maps the root changelog into the installed Python package. Keep the
+	// public mirror's package tree self-contained as well, so source-based
+	// backend runs can load it through package data.
+	const packageChangelog = resolve(stagingRoot, 'backend', 'bcgpt', 'CHANGELOG.md');
+	mkdirSync(dirname(packageChangelog), { recursive: true });
+	copyFileSync(resolve(projectRoot, 'CHANGELOG.md'), packageChangelog);
+
 	run('rsync', destinationRsyncArgs);
 } finally {
 	rmSync(stagingRoot, { recursive: true, force: true });
