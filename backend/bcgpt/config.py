@@ -1514,6 +1514,18 @@ ENABLE_TITLE_GENERATION = PersistentConfig(
     _env_bool("ENABLE_TITLE_GENERATION", "True"),
 )
 
+ENABLE_MEMORY_INJECTION = PersistentConfig(
+    "ENABLE_MEMORY_INJECTION",
+    "task.memory.injection_enable",
+    _env_bool("ENABLE_MEMORY_INJECTION", "True"),
+)
+
+ENABLE_MEMORY_EXTRACTION = PersistentConfig(
+    "ENABLE_MEMORY_EXTRACTION",
+    "task.memory.extraction_enable",
+    _env_bool("ENABLE_MEMORY_EXTRACTION", "True"),
+)
+
 ENABLE_SEARCH_QUERY_GENERATION = PersistentConfig(
     "ENABLE_SEARCH_QUERY_GENERATION",
     "task.query.search.enable",
@@ -2141,6 +2153,11 @@ RAG_CRAG_THRESHOLD_INSUFFICIENT = PersistentConfig(
     "RAG_CRAG_THRESHOLD_INSUFFICIENT",
     "rag.crag.threshold_insufficient",
     _env_float("RAG_CRAG_THRESHOLD_INSUFFICIENT", "40"),
+)
+RAG_CRAG_WEB_FALLBACK_ENABLED = PersistentConfig(
+    "RAG_CRAG_WEB_FALLBACK_ENABLED",
+    "rag.crag.web_fallback_enabled",
+    _env_bool("RAG_CRAG_WEB_FALLBACK_ENABLED", "False"),
 )
 
 # Document Grading
@@ -3159,6 +3176,24 @@ SECURITY_SHADOW_MODE = PersistentConfig(
     "SECURITY_SHADOW_MODE",
     "security.shadow_mode",
     _env_bool("SECURITY_SHADOW_MODE", "True"),
+)
+
+SECURITY_FAIL_CLOSED = PersistentConfig(
+    "SECURITY_FAIL_CLOSED",
+    "security.fail_closed",
+    _env_bool("SECURITY_FAIL_CLOSED", "False"),
+)
+
+SECURITY_OUTPUT_ENFORCEMENT = PersistentConfig(
+    "SECURITY_OUTPUT_ENFORCEMENT",
+    "security.output_enforcement",
+    _env_bool("SECURITY_OUTPUT_ENFORCEMENT", "False"),
+)
+
+SECURITY_PRESET = PersistentConfig(
+    "SECURITY_PRESET",
+    "security.preset",
+    os.environ.get("SECURITY_PRESET", ""),
 )
 
 SECURITY_LOG_DETECTIONS = PersistentConfig(

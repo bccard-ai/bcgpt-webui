@@ -10,6 +10,9 @@ def _normalize_korean(word: str) -> str:
 def evaluate_retrieval_quality(
     query: str,
     documents: list[dict],
+    *,
+    threshold_sufficient: float = 65.0,
+    threshold_insufficient: float = 40.0,
 ) -> dict:
     if not documents:
         return {
@@ -80,9 +83,9 @@ def evaluate_retrieval_quality(
         + 0.15 * diversity
     ) * 100
 
-    if composite >= 65:
+    if composite >= threshold_sufficient:
         verdict = "sufficient"
-    elif composite >= 40:
+    elif composite >= threshold_insufficient:
         verdict = "partial"
     else:
         verdict = "insufficient"

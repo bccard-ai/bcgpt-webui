@@ -9,7 +9,7 @@ import uuid
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import BigInteger, Column, String, Text
+from sqlalchemy import BigInteger, Column, Float, String, Text
 
 from bcgpt.internal import Base, get_db
 
@@ -19,7 +19,7 @@ from bcgpt.internal import Base, get_db
 # ---------------------------------------------------------------------------
 
 class Memory(Base):
-    """Persistent representation of a memory row."""
+    """Backward-compatible memory row; enrichment columns default safely."""
 
     __tablename__ = "memory"
 
@@ -28,6 +28,9 @@ class Memory(Base):
     content = Column(Text)
     updated_at = Column(BigInteger)
     created_at = Column(BigInteger)
+    tier = Column(String, default="long_term")       # working|short_term|long_term
+    importance = Column(Float, default=0.5)            # 0.0–1.0
+    category = Column(String, default="general")      # preference|fact|instruction
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +45,9 @@ class MemoryModel(BaseModel):
     content: str
     updated_at: int  # epoch seconds
     created_at: int  # epoch seconds
+    tier: str = "long_term"
+    importance: float = 0.5
+    category: str = "general"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +63,9 @@ class MemoriesTable:
         self,
         user_id: str,
         content: str,
+        tier: str = "long_term",
+        importance: float = 0.5,
+        category: str = "general",
     ) -> Optional[MemoryModel]:
         """Create a new memory entry and return its model."""
         with get_db() as db:
@@ -67,6 +76,9 @@ class MemoriesTable:
                     "id": id,
                     "user_id": user_id,
                     "content": content,
+                    "tier": tier,
+                    "importance": importance,
+                    "category": category,
                     "created_at": int(time.time()),
                     "updated_at": int(time.time()),
                 }
@@ -108,12 +120,18 @@ class MemoriesTable:
                 return None
 
     def get_memories_by_user_id(
-        self, user_id: str
+        self, user_id: str, limit: int = 50
     ) -> list[MemoryModel]:
         """Return all memory entries belonging to a specific user."""
         with get_db() as db:
             try:
-                memories = db.query(Memory).filter_by(user_id=user_id).all()
+                memories = (
+                    db.query(Memory)
+                    .filter_by(user_id=user_id)
+                    .order_by(Memory.importance.desc(), Memory.updated_at.desc())
+                    .limit(limit)
+                    .all()
+                )
                 return [
                     MemoryModel.model_validate(memory) for memory in memories
                 ]

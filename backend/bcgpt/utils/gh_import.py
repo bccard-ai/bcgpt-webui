@@ -5,6 +5,7 @@ Security policy:
 - Enforce MAX_BYTES on the response (Content-Length or bytes read).
 - Validate frontmatter (name + description required).
 - Reject any bundled resource whose path is under ``scripts/`` (no executable scripts).
+- Scan imported skill content for prompt-injection patterns.
 """
 
 from __future__ import annotations
@@ -25,6 +26,28 @@ MAX_BYTES = 2_000_000
 _TIMEOUT_SECONDS = 15
 
 _SCRIPTS_PATH = re.compile(r"(^|/)scripts/+", re.IGNORECASE)
+
+_INJECTION_PATTERNS = [
+    re.compile(r"ignore\s+(all\s+)?(previous|above|prior)\s+instructions", re.I),
+    re.compile(r"you\s+are\s+(now|actually)\s+", re.I),
+    re.compile(r"system\s*:\s*", re.I),
+    re.compile(r"<\s*/?\s*system\s*>", re.I),
+    re.compile(r"reveal\s+(your|the)\s+(system\s+)?prompt", re.I),
+    re.compile(r"do\s+not\s+follow\s+(your|the|any)\s+rules", re.I),
+    re.compile(r"disregard\s+(all|any|previous)", re.I),
+    re.compile(r"new\s+instructions?\s*:", re.I),
+    re.compile(r"\[INST\]|\[/INST\]", re.I),
+]
+
+
+def scan_skill_for_injection(content: str) -> list[str]:
+    """Return a list of detected injection patterns (empty = clean)."""
+    matches = []
+    for pattern in _INJECTION_PATTERNS:
+        found = pattern.search(content)
+        if found:
+            matches.append(found.group(0))
+    return matches
 
 
 def fetch_skill_from_url(url: str) -> Tuple[str, str]:
@@ -81,5 +104,12 @@ def validate_skill_content(
     # Reject any literal reference to a scripts/ path in the body.
     if _SCRIPTS_PATH.search(skill.prompt_template or ""):
         raise ValueError("Skill body references a forbidden 'scripts/' path")
+
+    injection_hits = scan_skill_for_injection(skill.prompt_template or "")
+    if injection_hits:
+        raise ValueError(
+            "Skill content matched prompt-injection patterns and was rejected: "
+            + "; ".join(injection_hits[:3])
+        )
 
     return skill, {"resources": skill.resources}

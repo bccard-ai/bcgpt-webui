@@ -55,6 +55,62 @@ BLOCKED_MESSAGE_KO = "Message could not be processed. Blocked by security policy
 BLOCKED_MESSAGE_EN = "Message could not be processed. Blocked by security policy."
 
 
+class SecurityPreset(str, Enum):
+    MINIMAL = "minimal"
+    STANDARD = "standard"
+    STRICT = "strict"
+
+
+PRESET_CONFIGS: dict[SecurityPreset, dict[str, bool]] = {
+    SecurityPreset.MINIMAL: {
+        "SECURITY_PROMPT_INJECTION_ENABLED": True,
+        "SECURITY_JAILBREAK_ENABLED": False,
+        "SECURITY_PII_ENABLED": False,
+        "SECURITY_TOXICITY_ENABLED": False,
+        "SECURITY_SECRETS_ENABLED": True,
+        "SECURITY_OUTPUT_FILTER_ENABLED": False,
+        "SECURITY_LLM_SCANNER_ENABLED": False,
+        "SECURITY_SHADOW_MODE": True,
+        "SECURITY_FAIL_CLOSED": False,
+        "SECURITY_OUTPUT_ENFORCEMENT": False,
+    },
+    SecurityPreset.STANDARD: {
+        "SECURITY_PROMPT_INJECTION_ENABLED": True,
+        "SECURITY_JAILBREAK_ENABLED": True,
+        "SECURITY_PII_ENABLED": True,
+        "SECURITY_TOXICITY_ENABLED": False,
+        "SECURITY_SECRETS_ENABLED": True,
+        "SECURITY_OUTPUT_FILTER_ENABLED": True,
+        "SECURITY_LLM_SCANNER_ENABLED": False,
+        "SECURITY_SHADOW_MODE": False,
+        "SECURITY_FAIL_CLOSED": False,
+        "SECURITY_OUTPUT_ENFORCEMENT": False,
+    },
+    SecurityPreset.STRICT: {
+        "SECURITY_PROMPT_INJECTION_ENABLED": True,
+        "SECURITY_JAILBREAK_ENABLED": True,
+        "SECURITY_PII_ENABLED": True,
+        "SECURITY_TOXICITY_ENABLED": True,
+        "SECURITY_SECRETS_ENABLED": True,
+        "SECURITY_OUTPUT_FILTER_ENABLED": True,
+        "SECURITY_LLM_SCANNER_ENABLED": True,
+        "SECURITY_SHADOW_MODE": False,
+        "SECURITY_FAIL_CLOSED": True,
+        "SECURITY_OUTPUT_ENFORCEMENT": True,
+    },
+}
+
+
+def apply_security_preset(config, preset: SecurityPreset | str) -> None:
+    settings = PRESET_CONFIGS.get(
+        preset if isinstance(preset, SecurityPreset) else SecurityPreset(preset)
+    )
+    if not settings:
+        return
+    for key, value in settings.items():
+        setattr(config, key, value)
+
+
 import asyncio
 import hashlib
 import logging
@@ -205,7 +261,20 @@ class SecurityPipeline:
                 )
                 for (name, _), result in zip(llm_jobs, results):
                     if isinstance(result, Exception):
-                        log.warning("%s failed, failing open: %s", name, result)
+                        if getattr(self.config, "SECURITY_FAIL_CLOSED", False):
+                            all_threats.append(
+                                ThreatMatch(
+                                    threat_type=ThreatType.LLM_DETECTION,
+                                    pattern_name=f"{name}_failure",
+                                    matched_text="",
+                                    severity=ThreatSeverity.HIGH,
+                                    description=f"{name} failed/timed out (fail-closed)",
+                                    confidence=1.0,
+                                )
+                            )
+                            log.warning("%s failed, fail-closed: %s", name, result)
+                        else:
+                            log.warning("%s failed, failing open: %s", name, result)
                     else:
                         all_threats.extend(result.threats)
 
@@ -246,7 +315,20 @@ class SecurityPipeline:
                 llm_result = await self._llm_scanner.scan_output(text, request, user)
                 result.threats.extend(llm_result.threats)
             except Exception as e:
-                log.warning(f"LLM output scan failed, failing open: {e}")
+                if getattr(self.config, "SECURITY_FAIL_CLOSED", False):
+                    result.threats.append(
+                        ThreatMatch(
+                            threat_type=ThreatType.LLM_DETECTION,
+                            pattern_name="output_llm_scan_failure",
+                            matched_text="",
+                            severity=ThreatSeverity.HIGH,
+                            description="LLM output scan failed/timed out (fail-closed)",
+                            confidence=1.0,
+                        )
+                    )
+                    log.warning("LLM output scan failed, fail-closed: %s", e)
+                else:
+                    log.warning(f"LLM output scan failed, failing open: {e}")
         result.threats = self._filter_by_confidence(result.threats)
         result.is_safe = len(result.threats) == 0
         if self.config.SECURITY_LOG_DETECTIONS and not result.is_safe:

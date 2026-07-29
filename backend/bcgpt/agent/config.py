@@ -66,6 +66,12 @@ AGENT_QUALITY_SAMPLING_RATE = PersistentConfig(
     _env_float("AGENT_QUALITY_SAMPLING_RATE", 0.1),
 )
 
+CODE_SANDBOX_ENABLED = PersistentConfig(
+    "CODE_SANDBOX_ENABLED",
+    "agent.code_sandbox_enabled",
+    _env_bool("CODE_SANDBOX_ENABLED", "False"),
+)
+
 # === Workflow Engine ========================================================
 
 WORKFLOW_ENGINE_ENABLED = PersistentConfig(

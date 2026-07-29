@@ -173,6 +173,7 @@ from bcgpt.agent.config import (
     AGENT_OPERATOR_MAX_TOOL_ITERATIONS,
     AGENT_QUALITY_PIPELINE_ENABLED,
     AGENT_QUALITY_SAMPLING_RATE,
+    CODE_SANDBOX_ENABLED,
     WORKFLOW_ENGINE_ENABLED,
     WORKFLOW_DEFAULT_TIMEOUT,
     WORKFLOW_NODE_TIMEOUT,
@@ -371,6 +372,7 @@ from bcgpt.config import (
     RAG_CRAG_ENABLED,
     RAG_CRAG_THRESHOLD_SUFFICIENT,
     RAG_CRAG_THRESHOLD_INSUFFICIENT,
+    RAG_CRAG_WEB_FALLBACK_ENABLED,
     RAG_DOC_GRADING_ENABLED,
     RAG_EVIDENCE_RECONCILIATION_ENABLED,
     # open-moai adoption — Phase 1
@@ -491,6 +493,8 @@ from bcgpt.config import (
     TASK_MODEL_EXTERNAL,
     ENABLE_TAGS_GENERATION,
     ENABLE_TITLE_GENERATION,
+    ENABLE_MEMORY_INJECTION,
+    ENABLE_MEMORY_EXTRACTION,
     ENABLE_SEARCH_QUERY_GENERATION,
     ENABLE_RETRIEVAL_QUERY_GENERATION,
     ENABLE_AUTOCOMPLETE_GENERATION,
@@ -513,6 +517,9 @@ from bcgpt.config import (
     SECURITY_SCANNER_ENABLED,
     SECURITY_SHADOW_MODE,
     SECURITY_LOG_DETECTIONS,
+    SECURITY_FAIL_CLOSED,
+    SECURITY_OUTPUT_ENFORCEMENT,
+    SECURITY_PRESET,
     SECURITY_PROMPT_INJECTION_ENABLED,
     SECURITY_JAILBREAK_ENABLED,
     SECURITY_PII_ENABLED,
@@ -831,6 +838,7 @@ def _apply_config(app: FastAPI) -> None:
     cfg.RAG_CRAG_ENABLED = RAG_CRAG_ENABLED
     cfg.RAG_CRAG_THRESHOLD_SUFFICIENT = RAG_CRAG_THRESHOLD_SUFFICIENT
     cfg.RAG_CRAG_THRESHOLD_INSUFFICIENT = RAG_CRAG_THRESHOLD_INSUFFICIENT
+    cfg.RAG_CRAG_WEB_FALLBACK_ENABLED = RAG_CRAG_WEB_FALLBACK_ENABLED
     cfg.RAG_DOC_GRADING_ENABLED = RAG_DOC_GRADING_ENABLED
     cfg.RAG_EVIDENCE_RECONCILIATION_ENABLED = RAG_EVIDENCE_RECONCILIATION_ENABLED
     cfg.RAG_MULTI_HOP_ENABLED = RAG_MULTI_HOP_ENABLED
@@ -997,6 +1005,8 @@ def _apply_config(app: FastAPI) -> None:
     cfg.ENABLE_AUTOCOMPLETE_GENERATION = ENABLE_AUTOCOMPLETE_GENERATION
     cfg.ENABLE_TAGS_GENERATION = ENABLE_TAGS_GENERATION
     cfg.ENABLE_TITLE_GENERATION = ENABLE_TITLE_GENERATION
+    cfg.ENABLE_MEMORY_INJECTION = ENABLE_MEMORY_INJECTION
+    cfg.ENABLE_MEMORY_EXTRACTION = ENABLE_MEMORY_EXTRACTION
     cfg.TITLE_GENERATION_PROMPT_TEMPLATE = TITLE_GENERATION_PROMPT_TEMPLATE
     cfg.TAGS_GENERATION_PROMPT_TEMPLATE = TAGS_GENERATION_PROMPT_TEMPLATE
     cfg.IMAGE_PROMPT_GENERATION_PROMPT_TEMPLATE = (
@@ -1025,6 +1035,9 @@ def _apply_config(app: FastAPI) -> None:
     cfg.SECURITY_SCANNER_ENABLED = SECURITY_SCANNER_ENABLED
     cfg.SECURITY_SHADOW_MODE = SECURITY_SHADOW_MODE
     cfg.SECURITY_LOG_DETECTIONS = SECURITY_LOG_DETECTIONS
+    cfg.SECURITY_FAIL_CLOSED = SECURITY_FAIL_CLOSED
+    cfg.SECURITY_OUTPUT_ENFORCEMENT = SECURITY_OUTPUT_ENFORCEMENT
+    cfg.SECURITY_PRESET = SECURITY_PRESET
     cfg.SECURITY_PROMPT_INJECTION_ENABLED = SECURITY_PROMPT_INJECTION_ENABLED
     cfg.SECURITY_JAILBREAK_ENABLED = SECURITY_JAILBREAK_ENABLED
     cfg.SECURITY_PII_ENABLED = SECURITY_PII_ENABLED
@@ -1106,6 +1119,7 @@ def _apply_config(app: FastAPI) -> None:
     cfg.AGENT_OPERATOR_MAX_TOOL_ITERATIONS = AGENT_OPERATOR_MAX_TOOL_ITERATIONS
     cfg.AGENT_QUALITY_PIPELINE_ENABLED = AGENT_QUALITY_PIPELINE_ENABLED
     cfg.AGENT_QUALITY_SAMPLING_RATE = AGENT_QUALITY_SAMPLING_RATE
+    cfg.CODE_SANDBOX_ENABLED = CODE_SANDBOX_ENABLED
     cfg.WORKFLOW_ENGINE_ENABLED = WORKFLOW_ENGINE_ENABLED
     cfg.WORKFLOW_DEFAULT_TIMEOUT = WORKFLOW_DEFAULT_TIMEOUT
     cfg.WORKFLOW_NODE_TIMEOUT = WORKFLOW_NODE_TIMEOUT
@@ -1618,6 +1632,17 @@ async def lifespan(app: FastAPI):
     if RESET_CONFIG_ON_START:
         reset_config()
 
+    preset_val = getattr(app.state.config, "SECURITY_PRESET", None)
+    preset_str = getattr(preset_val, "value", preset_val) if preset_val else ""
+    if preset_str:
+        try:
+            from bcgpt.utils.security import apply_security_preset
+
+            apply_security_preset(app.state.config, preset_str)
+            log.info("Applied security preset: %s", preset_str)
+        except Exception as e:
+            log.warning("Could not apply security preset '%s': %s", preset_str, e)
+
     if LICENSE_KEY:
         get_license_data(app, LICENSE_KEY)
 
@@ -1686,6 +1711,16 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning("Failed to start built-in MCP %s: %s", _name, e)
 
+    # --- Agent scheduler (APScheduler AsyncIOScheduler) ---
+    scheduler_started = False
+    try:
+        from bcgpt.agent.scheduler import start_scheduler
+
+        await start_scheduler(app)
+        scheduler_started = True
+    except Exception as e:
+        log.warning("Agent scheduler start skipped: %s", e)
+
     # Background tasks
     cleanup_task = asyncio.create_task(periodic_usage_pool_cleanup())
     audit_task = asyncio.create_task(_audit_retention_task(app))
@@ -1705,6 +1740,14 @@ async def lifespan(app: FastAPI):
             await task
         except asyncio.CancelledError:
             pass
+
+    if scheduler_started:
+        try:
+            from bcgpt.agent.scheduler import shutdown_scheduler
+
+            await shutdown_scheduler()
+        except Exception as e:
+            log.warning("Agent scheduler shutdown error: %s", e)
 
     await close_client_session()
 

@@ -539,6 +539,26 @@ def _filter_and_coerce_params(raw_params: dict, spec: dict) -> dict:
     return filtered
 
 
+async def _check_tool_approval(
+    user: Any, tool_name: str, params: dict
+) -> tuple[bool, str]:
+    """Return (approved, reason) from the HITL approval gate."""
+    try:
+        from bcgpt.compliance.hitl import ApprovalGates
+
+        if not ApprovalGates.enabled:
+            return True, ""
+        decision = await ApprovalGates.check(
+            user_id=str(user.id),
+            scope="chat_tool_call",
+            tool_name=tool_name,
+            arguments=params,
+        )
+        return decision.approved, decision.reason
+    except Exception:
+        return False, "Approval gate unavailable (fail-safe deny)"
+
+
 async def chat_completion_tools_handler(
     request: Request,
     body: dict,
@@ -598,7 +618,12 @@ async def chat_completion_tools_handler(
                 )
 
                 try:
-                    if tool.get("direct", False):
+                    _approved, _reason = await _check_tool_approval(
+                        user, tool_name, tool_params
+                    )
+                    if not _approved:
+                        tool_result = f"Tool `{tool_name}` blocked: {_reason}"
+                    elif tool.get("direct", False):
                         tool_result = await event_caller(
                             {
                                 "type": "execute:tool",
@@ -1193,7 +1218,12 @@ async def _run_post_retrieval(
 
     # CRAG quality evaluation
     if getattr(config, "RAG_CRAG_ENABLED", False) and docs:
-        crag_result = evaluate_retrieval_quality(query=original_query, documents=docs)
+        crag_result = evaluate_retrieval_quality(
+            query=original_query,
+            documents=docs,
+            threshold_sufficient=getattr(config, "RAG_CRAG_THRESHOLD_SUFFICIENT", 65.0),
+            threshold_insufficient=getattr(config, "RAG_CRAG_THRESHOLD_INSUFFICIENT", 40.0),
+        )
         crag_verdict = crag_result.get("verdict")
         log.debug(
             "CRAG verdict: %s, score: %s",
@@ -1201,10 +1231,50 @@ async def _run_post_retrieval(
             crag_result.get("score"),
         )
         if crag_verdict == "insufficient":
-            log.info(
-                "CRAG: retrieval quality insufficient, "
-                "source quality may be degraded"
-            )
+            if getattr(config, "RAG_CRAG_WEB_FALLBACK_ENABLED", False):
+                log.info("CRAG: retrieval insufficient, triggering web fallback")
+                try:
+                    web_results = await process_web_search(
+                        request,
+                        SearchForm(query=original_query),
+                        user=user,
+                    )
+                    if web_results:
+                        web_docs = [
+                            {
+                                "text": r.get("content", r.get("snippet", "")),
+                                "title": r.get("title", ""),
+                                "source": r.get("link", r.get("url", "")),
+                                "score": 0.5,
+                                "from_web_fallback": True,
+                            }
+                            for r in web_results
+                            if r.get("content") or r.get("snippet")
+                        ]
+                        if web_docs:
+                            docs = web_docs + docs
+                            log.info(
+                                "CRAG web fallback added %d documents",
+                                len(web_docs),
+                            )
+                except Exception as exc:
+                    log.warning("CRAG web fallback failed: %s", exc)
+            else:
+                log.info(
+                    "CRAG: retrieval quality insufficient, "
+                    "source quality may be degraded"
+                )
+        elif crag_verdict == "partial":
+            metrics = crag_result.get("metrics", {})
+            avg_sim = metrics.get("avg_similarity", 0.0)
+            filtered = [d for d in docs if d.get("score", 0.0) >= avg_sim * 0.5]
+            if filtered and len(filtered) < len(docs):
+                log.info(
+                    "CRAG: partial quality, filtered %d -> %d documents",
+                    len(docs),
+                    len(filtered),
+                )
+                docs = filtered
 
     # Document grading
     if getattr(config, "RAG_DOC_GRADING_ENABLED", False) and docs:
@@ -2087,6 +2157,19 @@ async def process_chat_payload(
     except Exception as _exc:
         log.debug("Skill catalog injection skipped: %s", _exc)
 
+    # --- Memory injection ---
+    if getattr(request.app.state.config, "ENABLE_MEMORY_INJECTION", True):
+        try:
+            from bcgpt.utils.memory_inject import build_memory_context
+
+            _mem_text = await build_memory_context(user)
+            if _mem_text:
+                form_data["messages"] = add_or_update_system_message(
+                    _mem_text, form_data["messages"]
+                )
+        except Exception as _exc:
+            log.debug("Memory injection skipped: %s", _exc)
+
     # --- Model knowledge ---
     if model_knowledge:
         await _emit_status(
@@ -2304,6 +2387,17 @@ async def process_chat_payload(
             tools_dict.setdefault("read_skill", make_read_skill_descriptor(user))
     except Exception as _exc:
         log.debug("read_skill registration skipped: %s", _exc)
+
+    # --- Code sandbox: run_python tool (AST-allowlisted subprocess) ---
+    try:
+        from bcgpt.utils.code_sandbox import make_run_python_descriptor
+
+        if getattr(request.app.state.config, "CODE_SANDBOX_ENABLED", False):
+            if not tools_dict:
+                tools_dict = {}
+            tools_dict.setdefault("run_python", make_run_python_descriptor())
+    except Exception as _exc:
+        log.debug("run_python registration skipped: %s", _exc)
 
     # --- MCP: register server-side-executed MCP tools into tools_dict ---
     try:
@@ -3021,6 +3115,21 @@ async def process_chat_response(
                 event_emitter,
             )
 
+        if getattr(request.app.state.config, "ENABLE_MEMORY_EXTRACTION", True):
+            try:
+                from bcgpt.utils.memory_inject import extract_and_store_memories
+
+                model_id = (
+                    request.app.state.config.TITLE_GENERATION_MODEL
+                    if hasattr(request.app.state.config, "TITLE_GENERATION_MODEL")
+                    else None
+                )
+                await extract_and_store_memories(
+                    request, user, msgs, model_id=model_id
+                )
+            except Exception as _exc:
+                log.debug("Memory extraction skipped: %s", _exc)
+
     # --- Non-streaming response ---
     if not isinstance(response, StreamingResponse):
         if not event_emitter:
@@ -3513,7 +3622,12 @@ async def _handle_streaming_response(
                         )
                         tc_params = {k: v for k, v in tc_params.items() if k in allowed}
 
-                        if tool.get("direct", False):
+                        _approved, _reason = await _check_tool_approval(
+                            user, tc_name, tc_params
+                        )
+                        if not _approved:
+                            tool_result = f"Tool `{tc_name}` blocked: {_reason}"
+                        elif tool.get("direct", False):
                             tool_result = await event_caller(
                                 {
                                     "type": "execute:tool",
