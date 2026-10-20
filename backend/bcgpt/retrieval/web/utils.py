@@ -31,6 +31,7 @@ from typing import (
 
 import aiohttp
 import certifi
+from aiohttp.abc import AbstractResolver
 import validators
 from langchain_community.document_loaders import PlaywrightURLLoader, WebBaseLoader
 from langchain_community.document_loaders.base import BaseLoader
@@ -50,7 +51,6 @@ from bcgpt.config import (
 from bcgpt.constants import ERROR_MESSAGES
 from bcgpt.env import SRC_LOG_LEVELS
 from bcgpt.retrieval import TavilyLoader
-from bcgpt.utils.http_client import get_client_session
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["RAG"])
@@ -202,6 +202,92 @@ async def validate_url_with_redirect_check(url: str) -> bool:
     allow_private = bool(ENABLE_RAG_LOCAL_WEB_FETCH)
     _check_ips_against_blocklist(parsed.hostname, allow_private=allow_private)
     return True
+
+
+class SSRFSafeResolver(AbstractResolver):
+    """aiohttp resolver that drops blocked addresses at *connection* time.
+
+    :func:`validate_url` resolves a hostname once to vet it, but the HTTP
+    client resolves it again when connecting; a short-TTL DNS record can
+    answer differently the second time (DNS rebinding). Filtering inside the
+    resolver closes that gap: the client can only ever connect to an address
+    that passed :func:`_is_blocked_ip`. Proxy hosts taken from the environment
+    are exempt, because with a proxy the target is resolved by the proxy.
+    """
+
+    def __init__(self, *, allow_private: bool, exempt_hosts: frozenset[str] = frozenset()):
+        self._inner = None  # created on first use; needs a running loop
+        self._allow_private = allow_private
+        self._exempt_hosts = exempt_hosts
+
+    async def resolve(self, host, port=0, family=socket.AF_INET):
+        if self._inner is None:
+            from aiohttp.resolver import ThreadedResolver
+
+            self._inner = ThreadedResolver()
+        infos = await self._inner.resolve(host, port, family)
+        if host in self._exempt_hosts:
+            return infos
+        safe = [
+            info
+            for info in infos
+            if not _is_blocked_ip(info["host"], allow_private=self._allow_private)
+        ]
+        if not safe:
+            raise OSError(f"Connection to {host} blocked by SSRF policy")
+        return safe
+
+    async def close(self) -> None:
+        if self._inner is not None:
+            await self._inner.close()
+
+
+def _env_proxy_hosts() -> frozenset[str]:
+    hosts = set()
+    for proxy_url in urllib.request.getproxies().values():
+        host = urllib.parse.urlparse(proxy_url).hostname
+        if host:
+            hosts.add(host)
+    return frozenset(hosts)
+
+
+def ssrf_safe_session(
+    *,
+    trust_env: bool = False,
+    timeout: float = 60,
+    allow_private: Optional[bool] = None,
+    **kwargs: Any,
+) -> aiohttp.ClientSession:
+    """A fresh ClientSession whose connections can only reach allowed IPs.
+
+    Use for any request to a user- or content-supplied URL. Callers must still
+    validate each redirect hop (or disable redirects). ``allow_private``
+    defaults to the ``ENABLE_RAG_LOCAL_WEB_FETCH`` setting.
+    """
+    if allow_private is None:
+        allow_private = bool(ENABLE_RAG_LOCAL_WEB_FETCH)
+    resolver = SSRFSafeResolver(
+        allow_private=allow_private,
+        exempt_hosts=_env_proxy_hosts() if trust_env else frozenset(),
+    )
+    return aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(resolver=resolver, use_dns_cache=False),
+        timeout=aiohttp.ClientTimeout(total=timeout),
+        trust_env=trust_env,
+        **kwargs,
+    )
+
+
+def _run_coroutine_sync(coro):
+    """Run *coro* to completion from synchronous code, even inside a loop thread."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 def safe_validate_urls(urls: Sequence[str]) -> Sequence[str]:
@@ -658,10 +744,23 @@ class SafeWebBaseLoader(WebBaseLoader):
         """Fetch a single URL with retries and SSRF-safe redirect following.
 
         Redirects are **not** followed automatically; each 3xx hop is
-        validated via :func:`validate_url` before the next request is made.
+        validated via :func:`validate_url` before the next request is made,
+        and the connection itself goes through :class:`SSRFSafeResolver`.
         """
-        session = await get_client_session(trust_env=self.trust_env)
+        async with ssrf_safe_session(trust_env=self.trust_env) as session:
+            return await self._fetch_with_session(
+                session, url, retries, cooldown, backoff, max_redirects
+            )
 
+    async def _fetch_with_session(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        retries: int,
+        cooldown: int,
+        backoff: float,
+        max_redirects: int,
+    ) -> str:
         for attempt in range(retries):
             try:
                 headers = dict(self.session.headers)
@@ -741,6 +840,25 @@ class SafeWebBaseLoader(WebBaseLoader):
         """Fetch all *urls* asynchronously and return parsed soups."""
         results = await self.fetch_all(urls)
         return self._unpack_fetch_results(results, urls, parser=parser)
+
+    def _scrape(
+        self,
+        url: str,
+        parser: Union[str, None] = None,
+        bs_kwargs: Optional[dict] = None,
+    ) -> Any:
+        """Synchronous scrape through the same SSRF-safe path as :meth:`_fetch`.
+
+        The inherited implementation uses ``requests``, which follows redirects
+        without re-validating each hop and resolves DNS on its own.
+        """
+        from bs4 import BeautifulSoup
+
+        if parser is None:
+            parser = "xml" if url.endswith(".xml") else self.default_parser
+        self._check_parser(parser)
+        html = _run_coroutine_sync(self._fetch(url))
+        return BeautifulSoup(html, parser, **(bs_kwargs or {}))
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents synchronously with per-URL error handling."""

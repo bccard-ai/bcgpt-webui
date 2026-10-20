@@ -52,8 +52,13 @@ class ToolDefinition:
 
 async def _rag_search_executor(args: dict, ctx: ToolContext) -> str:
     query = (args or {}).get("query", "")
-    collection_ids = (args or {}).get("collection_ids") or ctx.node_config.get(
-        "collection_ids", []
+    from bcgpt.retrieval.lifecycle import filter_readable_collections
+
+    # Ids may come from the model's tool call (i.e. from prompt content), so
+    # restrict them to collections the invoking user may read.
+    collection_ids = filter_readable_collections(
+        (args or {}).get("collection_ids") or ctx.node_config.get("collection_ids", []),
+        ctx.user,
     )
     if not query or not collection_ids or ctx.request is None:
         return "No knowledge collections available or empty query."

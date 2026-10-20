@@ -36,7 +36,10 @@ from bcgpt.constants import ERROR_MESSAGES
 from bcgpt.env import DEVICE_TYPE, DOCKER, SRC_LOG_LEVELS
 from bcgpt.models import FileModel, Files, Knowledges
 from bcgpt.retrieval import VECTOR_DB_CLIENT
-from bcgpt.retrieval.lifecycle import check_collection_access
+from bcgpt.retrieval.lifecycle import (
+    check_collection_access,
+    check_collection_write_access,
+)
 from bcgpt.retrieval.vector.corpus import DEFAULT_WORKSPACE_ID
 from bcgpt.retrieval import (
     Loader,
@@ -514,6 +517,20 @@ def _sanitize_metadata(metadata: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Helpers — collection ownership checks
 # ---------------------------------------------------------------------------
+
+
+def _client_error_detail(exc: Exception) -> str:
+    """Error text that is safe to return to a non-admin caller.
+
+    Application-raised ``ValueError`` messages (duplicate content, empty file,
+    invalid URL, ...) are meant for the user; anything else may carry internal
+    paths, hosts or library internals and is logged instead.
+    """
+    if isinstance(exc, HTTPException):
+        return str(exc.detail)
+    if isinstance(exc, ValueError):
+        return str(exc)
+    return "Processing failed. Check the server logs for details."
 
 
 def _check_collection_access(collection_name: str, user) -> None:
@@ -1828,6 +1845,8 @@ def process_file(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
+    if form_data.collection_name:
+        check_collection_write_access(form_data.collection_name, user)
 
     try:
         # P1.4: under RAG_USE_CORPUS, route ingest to the shared corpus
@@ -2009,7 +2028,7 @@ def process_file(
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
+            detail=_client_error_detail(exc),
         )
 
 
@@ -2022,6 +2041,7 @@ def process_text(
     collection_name = form_data.collection_name or calculate_sha256_string(
         form_data.content
     )
+    check_collection_write_access(collection_name, user)
 
     docs = [
         Document(
@@ -2049,6 +2069,8 @@ def process_text(
 def process_youtube_video(
     request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
+    if form_data.collection_name:
+        check_collection_write_access(form_data.collection_name, user)
     try:
         collection_name = (
             form_data.collection_name or calculate_sha256_string(form_data.url)[:63]
@@ -2081,7 +2103,7 @@ def process_youtube_video(
         log.exception("process_youtube_video failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(exc),
+            detail=_client_error_detail(exc),
         )
 
 
@@ -2089,6 +2111,8 @@ def process_youtube_video(
 def process_web(
     request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
+    if form_data.collection_name:
+        check_collection_write_access(form_data.collection_name, user)
     try:
         collection_name = (
             form_data.collection_name or calculate_sha256_string(form_data.url)[:63]
@@ -2124,7 +2148,7 @@ def process_web(
         log.exception("process_web failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(exc),
+            detail=_client_error_detail(exc),
         )
 
 
@@ -2271,6 +2295,8 @@ async def process_web_search(
     cfg = _cfg(request)
     engine = cfg.RAG_WEB_SEARCH_ENGINE
     query = form_data.query
+    if form_data.collection_name:
+        check_collection_write_access(form_data.collection_name, user)
 
     try:
         log.info("Web search: engine=%s query=%r", engine, query)
@@ -2413,7 +2439,7 @@ def query_doc_handler(
         log.exception("query_doc failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(exc),
+            detail=_client_error_detail(exc),
         )
 
 
@@ -2453,7 +2479,7 @@ def query_collection_handler(
         log.exception("query_collection failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(exc),
+            detail=_client_error_detail(exc),
         )
 
 
@@ -2552,11 +2578,15 @@ def process_files_batch(
     results: List[BatchProcessFilesResult] = []
     errors: List[BatchProcessFilesResult] = []
     collection_name = form_data.collection_name
+    check_collection_write_access(collection_name, user)
 
     all_docs: List[Document] = []
     for file in form_data.files:
         try:
-            if not (file.user_id == user.id or user.role == "admin"):
+            stored = Files.get_file_by_id(file.id)
+            if stored is None or not (
+                stored.user_id == user.id or user.role == "admin"
+            ):
                 errors.append(
                     BatchProcessFilesResult(
                         file_id=file.id, status="skipped", error="Access denied"

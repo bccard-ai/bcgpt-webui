@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from bcgpt.agent.llm import assert_user_model_access
 from bcgpt.agent.multi_agent import MultiAgentExecutor
 from bcgpt.agent.types import MultiAgentPattern
 from bcgpt.utils.auth import get_verified_user
@@ -64,6 +65,12 @@ async def multi_agent_completions(
         pattern = MultiAgentPattern.from_value(form.pattern)
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Unknown pattern: {form.pattern}")
+
+    for spec in form.agents or []:
+        model_id = spec.get("model_id") if isinstance(spec, dict) else None
+        if not model_id:
+            raise HTTPException(status_code=400, detail="Each agent needs a model_id")
+        assert_user_model_access(request, user, model_id)
 
     # Apply server-side defaults/caps from config.
     config = dict(form.config or {})

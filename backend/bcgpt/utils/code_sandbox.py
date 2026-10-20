@@ -1,11 +1,20 @@
 """Sandboxed Python code interpreter for agent tool calls.
 
-Executes Python code in a restricted subprocess with:
-- CPU / memory / file-size rlimits
-- No network access (socket module blocked at runtime)
-- AST validation (allowlist of safe module imports + dunder/attribute guards)
+Executes Python code in a restricted subprocess with layered controls:
+- AST validation (allowlist of safe module imports, dunder/attribute guards and
+  a denylist of dangerous builtin names)
+- Runtime allowlist: user code runs with a reduced ``__builtins__`` whose
+  ``__import__`` only resolves ``ALLOWED_MODULES`` -- the AST check is not the
+  only line of defence
+- CPU / memory / file-size / process-count rlimits (no child processes)
+- Minimal environment: the server's environment variables (API keys, secret
+  key, DB URLs) are never inherited by the sandbox process
 - Timeout enforcement via ``asyncio.wait_for``
-- Process isolation (separate OS process)
+- Process isolation (separate OS process, throwaway working directory)
+
+This is defence in depth, not a security boundary on par with an OS sandbox.
+For multi-tenant deployments also run the backend in a container with a
+read-only filesystem and no outbound network (see CODE_SANDBOX_ENABLED docs).
 
 Exposes ``make_run_python_descriptor()`` which returns the synthetic tool
 descriptor consumed by ``process_chat_payload`` -- follows the exact pattern of
@@ -19,6 +28,7 @@ import asyncio
 import json
 import logging
 import sys
+import tempfile
 import textwrap
 from typing import Any
 
@@ -37,7 +47,15 @@ ALLOWED_MODULES: frozenset[str] = frozenset({
     "decimal", "fractions", "string", "textwrap",
     "hashlib", "base64", "unicodedata", "bisect", "heapq",
     "array", "struct", "pprint", "numbers", "enum",
-    "dataclasses", "typing", "io", "csv", "configparser",
+    "dataclasses", "typing", "csv",
+})
+
+# Builtins that give file, code-object or reflective access. They are rejected
+# by the AST validator *and* removed from the runtime ``__builtins__``.
+FORBIDDEN_BUILTINS: frozenset[str] = frozenset({
+    "open", "eval", "exec", "compile", "input", "breakpoint",
+    "globals", "locals", "vars", "getattr", "setattr", "delattr",
+    "help", "memoryview", "exit", "quit", "copyright", "credits", "license",
 })
 
 _FORBIDDEN_ATTRS: frozenset[str] = frozenset({
@@ -46,6 +64,7 @@ _FORBIDDEN_ATTRS: frozenset[str] = frozenset({
     "gi_frame", "gi_code", "cr_frame", "cr_code",
     "f_back", "f_locals", "f_globals", "f_builtins", "f_code",
     "co_consts", "co_names", "co_code",
+    "attrgetter", "methodcaller",
 })
 
 
@@ -90,6 +109,8 @@ class _SandboxValidator(ast.NodeVisitor):
         nid = node.id
         if nid.startswith("__") and nid.endswith("__") and nid not in self._SAFE_DUNDERS:
             self._err(f"Use of '{nid}' is not allowed in sandbox")
+        elif nid in FORBIDDEN_BUILTINS:
+            self._err(f"Use of builtin '{nid}' is not allowed in sandbox")
         self.generic_visit(node)
 
 
@@ -107,13 +128,17 @@ def validate_code(code: str) -> list[str]:
 # -- Subprocess runner script ------------------------------------------------
 
 _RUNNER_SCRIPT = textwrap.dedent("""\
-import sys, json, io, contextlib, traceback, resource
+import sys, json, io, contextlib, traceback, resource, builtins
 
 try:
     resource.setrlimit(resource.RLIMIT_CPU, ({cpu_seconds}, {cpu_seconds}))
     resource.setrlimit(resource.RLIMIT_AS, ({max_memory}, {max_memory}))
     resource.setrlimit(resource.RLIMIT_FSIZE, ({max_file}, {max_file}))
 except (ValueError, OSError):
+    pass
+try:
+    resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+except (ValueError, OSError, AttributeError):
     pass
 
 import socket as _sock_mod
@@ -124,12 +149,28 @@ class _BlockedSocket:
 
 _sock_mod.socket = _BlockedSocket
 
+_ALLOWED = frozenset({allowed_modules})
+_FORBIDDEN = frozenset({forbidden_builtins})
+_real_import = builtins.__import__
+
+def _guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if level != 0 or name.split(".")[0] not in _ALLOWED:
+        raise ImportError("Import of '%s' is not allowed in sandbox" % name)
+    return _real_import(name, globals, locals, fromlist, level)
+
+_safe_builtins = {{
+    k: v for k, v in vars(builtins).items()
+    if k not in _FORBIDDEN and k != "__import__"
+}}
+_safe_builtins["__import__"] = _guarded_import
+
 _code = sys.stdin.read()
+_compiled = compile(_code, "<sandbox>", "exec")
 _out = io.StringIO()
 _result = {{}}
 try:
     with contextlib.redirect_stdout(_out), contextlib.redirect_stderr(_out):
-        exec(compile(_code, "<sandbox>", "exec"), {{}})
+        exec(_compiled, {{"__builtins__": _safe_builtins, "__name__": "__sandbox__"}})
     _result["success"] = True
     _result["output"] = _out.getvalue()[:{max_output}]
 except Exception as _exc:
@@ -147,7 +188,14 @@ def _build_runner_script(*, cpu_seconds: int, memory_mb: int, max_output: int) -
         max_memory=memory_mb * 1024 * 1024,
         max_file=10 * 1024 * 1024,
         max_output=max_output,
+        allowed_modules=repr(sorted(ALLOWED_MODULES)),
+        forbidden_builtins=repr(sorted(FORBIDDEN_BUILTINS)),
     )
+
+
+def _sandbox_env() -> dict[str, str]:
+    """Environment for the sandbox process: nothing inherited from the server."""
+    return {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONIOENCODING": "utf-8"}
 
 
 # -- Public API --------------------------------------------------------------
@@ -178,16 +226,31 @@ async def run_python_sandboxed(
         cpu_seconds=cpu_seconds, memory_mb=memory_mb, max_output=max_output,
     )
 
+    return await _execute(code, script=script, timeout=timeout, max_output=max_output)
+
+
+async def _execute(
+    code: str, *, script: str, timeout: int, max_output: int,
+) -> dict[str, Any]:
+    """Run already-validated *code* in the sandbox subprocess."""
     try:
-        proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-I", "-c", script,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(code.encode()), timeout=timeout,
-        )
+        with tempfile.TemporaryDirectory(prefix="bcgpt-sandbox-") as workdir:
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-I", "-S", "-c", script,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=_sandbox_env(),
+                cwd=workdir,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(code.encode()), timeout=timeout,
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                raise
     except asyncio.TimeoutError:
         return {"success": False, "error": f"Execution timed out after {timeout}s", "output": ""}
     except Exception as exc:

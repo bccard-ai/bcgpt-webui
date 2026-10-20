@@ -60,6 +60,30 @@ async def llm_complete(
     return resp
 
 
+def assert_user_model_access(request: Any, user: Any, model_id: str) -> None:
+    """Apply the standard chat path's model ACL to a caller-chosen *model_id*.
+
+    :func:`llm_complete` bypasses the per-model access check because most agent
+    calls use models picked by the agent owner or the admin configuration. Any
+    endpoint that lets the caller pick the model id must call this first so a
+    user cannot run a model they could not chat with directly.
+    """
+    from fastapi import HTTPException
+
+    from bcgpt.env import BYPASS_MODEL_ACCESS_CONTROL
+    from bcgpt.utils.models import check_model_access
+
+    if BYPASS_MODEL_ACCESS_CONTROL or getattr(user, "role", None) != "user":
+        return
+    model = (getattr(request.app.state, "MODELS", None) or {}).get(model_id)
+    if model is None:
+        raise HTTPException(status_code=404, detail="Model not found")
+    try:
+        check_model_access(user, model)
+    except Exception:
+        raise HTTPException(status_code=403, detail="Model not found")
+
+
 def extract_message(resp: dict) -> dict:
     try:
         return resp["choices"][0]["message"] or {}

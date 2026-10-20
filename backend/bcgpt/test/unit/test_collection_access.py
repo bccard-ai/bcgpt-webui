@@ -142,3 +142,79 @@ def test_assert_user_memory_client_ref_blocked_for_other_user(monkeypatch):
     with pytest.raises(HTTPException) as ei:
         asyncio.run(source_resolution.assert_files_access(files, _user("u1")))
     assert ei.value.status_code == 403
+
+
+# --------------------------------------------------------------------------
+# check_collection_write_access / filter_readable_collections
+# --------------------------------------------------------------------------
+
+
+def _patch_kb(monkeypatch, kb):
+    monkeypatch.setattr(
+        lifecycle,
+        "Knowledges",
+        SimpleNamespace(get_knowledge_by_id=lambda *a, **k: kb),
+    )
+
+
+def test_own_memory_collection_readable_and_writable(monkeypatch):
+    _patch_kb(monkeypatch, None)
+    lifecycle.check_collection_access("user-memory-u1", _user("u1"))  # no raise
+    lifecycle.check_collection_write_access("user-memory-u1", _user("u1"))
+
+
+def test_other_users_memory_not_writable(monkeypatch):
+    _patch_kb(monkeypatch, None)
+    with pytest.raises(HTTPException) as ei:
+        lifecycle.check_collection_write_access("user-memory-other", _user("u1"))
+    assert ei.value.status_code == 403
+
+
+def test_public_kb_readable_but_not_writable(monkeypatch):
+    _patch_kb(monkeypatch, _kb("other", access_control=None))
+    lifecycle.check_collection_access("kb-1", _user("u1"))  # no raise
+    with pytest.raises(HTTPException) as ei:
+        lifecycle.check_collection_write_access("kb-1", _user("u1"))
+    assert ei.value.status_code == 403
+
+
+def test_kb_owner_can_write(monkeypatch):
+    _patch_kb(monkeypatch, _kb("u1"))
+    lifecycle.check_collection_write_access("kb-1", _user("u1"))  # no raise
+
+
+def test_corpus_collection_not_writable_by_users(monkeypatch):
+    _patch_kb(monkeypatch, None)
+    with pytest.raises(HTTPException):
+        lifecycle.check_collection_write_access("corpus_abc", _user("u1"))
+    lifecycle.check_collection_write_access("corpus_abc", _user("a", role="admin"))
+
+
+def test_other_users_file_collection_not_writable(monkeypatch):
+    import bcgpt.models.files as files_mod
+
+    monkeypatch.setattr(
+        files_mod,
+        "Files",
+        SimpleNamespace(get_file_by_id=lambda fid: SimpleNamespace(user_id="other")),
+    )
+    with pytest.raises(HTTPException):
+        lifecycle.check_collection_write_access("file-123", _user("u1"))
+
+
+def test_unregistered_hash_collection_writable(monkeypatch):
+    _patch_kb(monkeypatch, None)
+    lifecycle.check_collection_write_access("3f2a9c", _user("u1"))  # no raise
+
+
+def test_filter_readable_collections_drops_forbidden(monkeypatch):
+    _patch_kb(monkeypatch, None)
+    names = ["user-u1", "user-other", "user-memory-other", "web-search-x"]
+    assert lifecycle.filter_readable_collections(names, _user("u1")) == [
+        "user-u1",
+        "web-search-x",
+    ]
+
+
+def test_filter_readable_collections_without_user_is_empty():
+    assert lifecycle.filter_readable_collections(["user-u1"], None) == []

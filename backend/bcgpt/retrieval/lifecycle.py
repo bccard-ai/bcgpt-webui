@@ -72,25 +72,74 @@ def check_collection_access(collection_name: str, user) -> None:
         upload/manage time, and bare collections are admin-gated at registration.
 
     This is the canonical server-side collection-access check, shared by the
-    ``/api/v1/retrieval/query`` endpoints and the live chat retrieval path.
+    ``/api/v1/retrieval/query`` endpoints, the live chat retrieval path and the
+    agent RAG nodes/tools.
     """
+    _check_access(collection_name, user, "read")
+
+
+def check_collection_write_access(collection_name: str, user) -> None:
+    """Raise 403 if *user* may not create, overwrite or add to the collection.
+
+    Stricter than :func:`check_collection_access`: Knowledge Base collections
+    need ``write`` access, ``file-{id}`` collections need file ownership, and
+    the shared ``corpus_*`` collections are only written by the server itself
+    (callers that route to the corpus pick the name; users may not).
+    """
+    if user.role == "admin":
+        return
+    if collection_name.startswith("corpus_"):
+        _forbid()
+    if collection_name.startswith("file-"):
+        from bcgpt.models.files import Files
+
+        file = Files.get_file_by_id(collection_name[len("file-") :])
+        if file is not None and file.user_id != user.id:
+            _forbid()
+        return
+    _check_access(collection_name, user, "write")
+
+
+def filter_readable_collections(collection_names, user) -> list[str]:
+    """Return the subset of *collection_names* that *user* may read.
+
+    For callers that take collection ids from model or LLM input (agent
+    workflow nodes, tool loop) and must drop -- not error on -- ids the
+    invoking user cannot read. No user means no access.
+    """
+    if user is None:
+        return []
+    allowed: list[str] = []
+    for name in collection_names or []:
+        try:
+            check_collection_access(str(name), user)
+        except HTTPException:
+            log.warning("Dropped unreadable collection %r for user %s", name, user.id)
+            continue
+        allowed.append(str(name))
+    return allowed
+
+
+def _forbid() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+    )
+
+
+def _check_access(collection_name: str, user, permission: str) -> None:
     if collection_name.startswith("user-"):
-        if collection_name != f"user-{user.id}" and user.role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-            )
+        own = (f"user-{user.id}", f"user-memory-{user.id}")
+        if collection_name not in own and user.role != "admin":
+            _forbid()
         return
     kb = Knowledges.get_knowledge_by_id(collection_name)
     if kb is not None and not (
         kb.user_id == user.id
         or user.role == "admin"
-        or has_access(user.id, "read", kb.access_control)
+        or has_access(user.id, permission, kb.access_control)
     ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
+        _forbid()
 
 
 async def purge_file_vectors(file) -> None:

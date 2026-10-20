@@ -33,3 +33,16 @@ def test_loopback_builtin_allowed():
 
 def test_disallowed_host_denied():
     assert is_host_allowed("https://evil.com/mcp", ["example.com"]) is False
+
+
+def test_user_registered_urls_cannot_reach_loopback_even_if_allowlisted():
+    from bcgpt.mcpbridge.allowlist import is_user_host_allowed
+
+    rules = ["127.0.0.1", "localhost", "10.0.0.5", "mcp.example.com"]
+    assert is_user_host_allowed("https://mcp.example.com/sse", rules) is True
+    for url in (
+        "http://127.0.0.1:8090/mcp",
+        "http://localhost:8090/mcp",
+        "http://10.0.0.5/mcp",
+    ):
+        assert is_user_host_allowed(url, rules) is False

@@ -77,7 +77,7 @@
 							chat: chat!.chat,
 							models: get(models).filter((m) => chat!.chat?.models?.includes(m.id))
 						}),
-						'*'
+						url
 					);
 				}
 			},

@@ -1,12 +1,12 @@
 """Authentication and authorization utilities for BCGPT WebUI.
 
 Provides JWT creation/validation, password hashing, HMAC signature
-verification, license data retrieval, and FastAPI dependency-based
+verification, and FastAPI dependency-based
 user authentication (bearer token, cookie, API key).
 
 Public exports (re-exported via ``bcgpt.utils.__init__``):
     ALGORITHM, SESSION_SECRET, bearer_security,
-    verify_signature, override_static, get_license_data,
+    verify_signature,
     verify_password, get_password_hash,
     create_token, decode_token, extract_token_from_auth_header,
     create_api_key, get_http_authorization_cred,
@@ -27,14 +27,12 @@ from typing import Optional, Union
 
 import bcrypt
 import jwt
-import requests
 from fastapi import BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from bcgpt.constants import ERROR_MESSAGES
 from bcgpt.env import (
     SRC_LOG_LEVELS,
-    STATIC_DIR,
     TRUSTED_SIGNATURE_KEY,
     BCGPT_SECRET_KEY,
     JWT_ALGORITHM,
@@ -101,88 +99,6 @@ def verify_signature(payload: str, signature: str) -> bool:
         ).decode()
         return hmac.compare_digest(expected, signature)
     except Exception:
-        return False
-
-
-# ---------------------------------------------------------------------------
-# Static file override (license resource delivery)
-# ---------------------------------------------------------------------------
-
-
-def override_static(path: str, content: str) -> None:
-    """Write a Base64-encoded resource into the static assets directory.
-
-    Performs path-traversal validation before writing.  This is called by
-    :func:`get_license_data` when the license server delivers branded
-    static resources.
-
-    Args:
-        path: Relative filename (must not contain ``/`` or ``..``).
-        content: Base64-encoded file content.
-    """
-    if "/" in path or ".." in path:
-        log.error("Invalid static override path rejected: %s", path)
-        return
-
-    file_path = os.path.join(STATIC_DIR, path)
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-    with open(file_path, "wb") as f:
-        f.write(base64.b64decode(content))
-
-
-# ---------------------------------------------------------------------------
-# License data retrieval
-# ---------------------------------------------------------------------------
-
-
-def get_license_data(app, key: str) -> bool:
-    """Fetch and apply enterprise license data from the BCGPT license server.
-
-    On a successful response the function applies any bundled static
-    resources, user-count limits, branding name, and license metadata
-    to ``app.state``.
-
-    Args:
-        app: The FastAPI application instance (``app.state`` is mutated).
-        key: The license key string.
-
-    Returns:
-        ``True`` if the license was validated and applied, ``False`` otherwise.
-    """
-    if not key:
-        return False
-
-    try:
-        res = requests.post(
-            "https://api.BCGPT.com/api/v1/license/",
-            json={"key": key, "version": "1"},
-            timeout=5,
-        )
-
-        if not getattr(res, "ok", False):
-            log.error(
-                "License retrieval failed: %s",
-                getattr(res, "text", "unknown error"),
-            )
-            return False
-
-        payload = getattr(res, "json", lambda: {})()
-        for field_key, field_value in payload.items():
-            if field_key == "resources":
-                for resource_path, resource_content in field_value.items():
-                    override_static(resource_path, resource_content)
-            elif field_key == "count":
-                setattr(app.state, "USER_COUNT", field_value)
-            elif field_key == "name":
-                setattr(app.state, "BCGPT_APP_NAME", field_value)
-            elif field_key == "metadata":
-                setattr(app.state, "LICENSE_METADATA", field_value)
-
-        return True
-
-    except Exception as exc:
-        log.exception("License retrieval error: %s", exc)
         return False
 
 

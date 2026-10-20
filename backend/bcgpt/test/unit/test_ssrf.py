@@ -4,9 +4,9 @@ The cloud-metadata / internal-network SSRF surface (OWASP-style): an authenticat
 user asks the server to fetch a URL, which must never resolve to a private/loopback/
 link-local address. These tests lock the IP-blocklist (``_is_blocked_ip``) and the
 ``validate_url`` scheme/format gate so a future change cannot silently re-open the
-hole. (DNS-rebinding / TOCTOU -- resolving a safe IP then connecting to a different
-one -- remains a noted limitation that needs connection-time IP pinning and is out
-of scope here.)
+hole, plus the connection-time ``SSRFSafeResolver`` that closes the DNS-rebinding /
+TOCTOU gap (a host that resolved to a safe IP during validation but to a blocked
+one when the client connects).
 
 Network-free: ``_is_blocked_ip`` is pure ``ipaddress``; the ``validate_url`` cases
 exercise only the pre-DNS ValueError paths (bad scheme / malformed / no host), so no
@@ -112,3 +112,63 @@ def test_validate_url_unsupported_type_returns_false():
     # Non-str, non-sequence -> False (not a crash).
     assert validate_url(123) is False
     assert validate_url(None) is False
+
+
+# ---------------------------------------------------------------------------
+# SSRFSafeResolver -- connection-time filtering (DNS rebinding)
+# ---------------------------------------------------------------------------
+
+import asyncio  # noqa: E402
+
+from bcgpt.retrieval.web import utils as web_utils  # noqa: E402
+
+
+class _FakeInner:
+    def __init__(self, ips):
+        self._ips = ips
+
+    async def resolve(self, host, port=0, family=0):
+        return [{"hostname": host, "host": ip, "port": port} for ip in self._ips]
+
+    async def close(self):
+        pass
+
+
+def _resolve(ips, host="rebind.example", **kw):
+    resolver = web_utils.SSRFSafeResolver(allow_private=False, **kw)
+    resolver._inner = _FakeInner(ips)
+    return asyncio.run(resolver.resolve(host, 80))
+
+
+def test_resolver_rejects_when_all_addresses_blocked():
+    with pytest.raises(OSError):
+        _resolve(["169.254.169.254"])
+
+
+def test_resolver_drops_blocked_addresses():
+    infos = _resolve(["10.0.0.7", "93.184.216.34"])
+    assert [i["host"] for i in infos] == ["93.184.216.34"]
+
+
+def test_resolver_exempts_proxy_host():
+    infos = _resolve(
+        ["10.0.0.7"], host="proxy.corp", exempt_hosts=frozenset({"proxy.corp"})
+    )
+    assert [i["host"] for i in infos] == ["10.0.0.7"]
+
+
+def test_sync_scrape_uses_safe_fetch(monkeypatch):
+    loader = web_utils.SafeWebBaseLoader(web_paths=["https://example.com/"])
+    calls = []
+
+    async def fake_fetch(url, *a, **k):
+        calls.append(url)
+        return "<html><title>t</title><body>hello</body></html>"
+
+    monkeypatch.setattr(loader, "_fetch", fake_fetch)
+    monkeypatch.setattr(
+        loader.session, "get", lambda *a, **k: pytest.fail("requests path used")
+    )
+    soup = loader._scrape("https://example.com/")
+    assert calls == ["https://example.com/"]
+    assert "hello" in soup.get_text()

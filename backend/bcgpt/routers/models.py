@@ -46,6 +46,50 @@ async def get_base_models(user=Depends(get_admin_user)):
     return Models.get_base_models()
 
 
+def _assert_non_admin_model_form(form_data: ModelForm, user) -> None:
+    """Limits on what a non-admin may put in a custom model definition.
+
+    * A model without ``base_model_id`` overrides the matching base model for
+      every user (see ``utils.models._apply_base_model_override``) -- admin only.
+    * Knowledge attached to a model is injected for every chat with it without a
+      per-user ACL check, so the author must be able to read all of it.
+    """
+    if user.role == "admin":
+        return
+    if not form_data.base_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can override base models",
+        )
+
+    from bcgpt.models.files import Files
+    from bcgpt.retrieval.lifecycle import check_collection_access
+
+    meta = form_data.meta.model_dump() if form_data.meta else {}
+    for item in meta.get("knowledge") or []:
+        if not isinstance(item, dict):
+            continue
+        names = list(item.get("collection_names") or [])
+        if item.get("collection_name"):
+            names.append(item["collection_name"])
+        if item.get("type") == "collection" and item.get("id"):
+            names.append(item["id"])
+        for name in names:
+            check_collection_access(str(name), user)
+        if item.get("type") == "file" and item.get("id"):
+            file = Files.get_file_by_id(item["id"])
+            if file is None:
+                continue
+            if file.user_id != user.id:
+                kb_id = (file.meta or {}).get("collection_name")
+                if not kb_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+                    )
+                check_collection_access(kb_id, user)
+
+
 @router.post("/create", response_model=Optional[ModelModel])
 async def create_new_model(
     request: Request,
@@ -70,6 +114,7 @@ async def create_new_model(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.MODEL_ID_TAKEN,
         )
+    _assert_non_admin_model_form(form_data, user)
 
     model = Models.insert_new_model(form_data, user.id)
     if model:
@@ -158,6 +203,7 @@ async def update_model_by_id(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
+    _assert_non_admin_model_form(form_data, user)
 
     model = Models.update_model_by_id(id, form_data)
     return model

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from bcgpt import config
 from bcgpt.agent.capabilities import model_capability_enabled
 from bcgpt.agent.config import resolve_autonomy_level
+from bcgpt.agent.llm import assert_user_model_access
 from bcgpt.agent.types import AgentAutonomyLevel
 from bcgpt.agent.tool_loop.tools import BUILTIN_TOOLS
 from bcgpt.agent.workflow import (
@@ -26,6 +27,7 @@ from bcgpt.agent.workflow import (
 from bcgpt.agent.workflow.nodes import create_default_registry
 from bcgpt.compliance.hitl import ApprovalGates
 from bcgpt.models.models import ModelForm, Models
+from bcgpt.utils.access_control import has_access
 from bcgpt.utils.auth import get_admin_user, get_verified_user
 
 log = logging.getLogger(__name__)
@@ -129,9 +131,20 @@ def _require_owner_or_admin(model, user):
         raise HTTPException(status_code=403, detail="Not allowed to edit this agent")
 
 
+def _require_read_access(model, user):
+    if (
+        user.role == "admin"
+        or getattr(model, "user_id", None) == user.id
+        or has_access(user.id, "read", getattr(model, "access_control", None))
+    ):
+        return
+    raise HTTPException(status_code=403, detail="Not allowed to access this agent")
+
+
 @router.get("/{model_id}/workflow")
 async def get_agent_workflow(model_id: str, user=Depends(get_verified_user)):
     model = _get_model_or_404(model_id)
+    _require_read_access(model, user)
     try:
         nodes, source = _load_workflow_nodes(model)
     except WorkflowValidationError as e:
@@ -186,6 +199,12 @@ async def test_agent_workflow(
     user=Depends(get_verified_user),
 ):
     model = _get_model_or_404(model_id)
+    # Running an ad-hoc workflow is an edit-level action; running the stored
+    # one only needs the same read access as chatting with the agent.
+    if form.workflow:
+        _require_owner_or_admin(model, user)
+    else:
+        _require_read_access(model, user)
 
     try:
         if form.workflow:
@@ -258,6 +277,7 @@ async def evaluate_quality(
     model_id = form.model_id
     if not model_id:
         raise HTTPException(status_code=400, detail="model_id is required")
+    assert_user_model_access(request, user, model_id)
 
     default_model = (
         str(QUALITY_DEFAULT_MODEL.value) if QUALITY_DEFAULT_MODEL.value else model_id

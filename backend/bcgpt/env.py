@@ -388,9 +388,8 @@ BCGPT_AUTH_TRUSTED_PROXY_IPS: list[str] = [
 if BCGPT_AUTH_TRUSTED_EMAIL_HEADER and not BCGPT_AUTH_TRUSTED_PROXY_IPS:
     logging.getLogger(__name__).warning(
         "SECURITY: BCGPT_AUTH_TRUSTED_EMAIL_HEADER is set but BCGPT_AUTH_TRUSTED_PROXY_IPS "
-        "is empty — the email header is trusted from ANY source. If the backend port is "
-        "reachable without traversing your proxy, anyone can authenticate as any user. "
-        "Set BCGPT_AUTH_TRUSTED_PROXY_IPS to your proxy IP(s)/CIDR(s)."
+        "is empty — trusted-header sign-in is DISABLED (every such request is rejected). "
+        "Set BCGPT_AUTH_TRUSTED_PROXY_IPS to your proxy IP(s)/CIDR(s) to enable it."
     )
 
 # -- Secret key & cookies --------------------------------------------------
@@ -448,13 +447,10 @@ BCGPT_AUTH_COOKIE_SAME_SITE: str = os.environ.get(
     "BCGPT_AUTH_COOKIE_SAME_SITE", BCGPT_SESSION_COOKIE_SAME_SITE
 )
 
-#: Whether the auth cookie sets the ``Secure`` flag.
-BCGPT_AUTH_COOKIE_SECURE: bool = (
-    os.environ.get(
-        "BCGPT_AUTH_COOKIE_SECURE",
-        os.environ.get("BCGPT_SESSION_COOKIE_SECURE", "false"),
-    ).lower()
-    == "true"
+#: Whether the auth cookie (the JWT ``token``) sets the ``Secure`` flag.
+#: Follows the session cookie setting, so it is secure by default as well.
+BCGPT_AUTH_COOKIE_SECURE: bool = _env_bool(
+    "BCGPT_AUTH_COOKIE_SECURE", str(BCGPT_SESSION_COOKIE_SECURE)
 )
 
 if BCGPT_AUTH and not BCGPT_SECRET_KEY:

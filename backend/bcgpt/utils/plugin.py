@@ -269,10 +269,35 @@ def load_function_module_by_id(function_id, content=None):
         os.unlink(temp_file.name)
 
 
+# A bare PEP 508 project name with optional extras and version specifiers.
+# Anything else -- pip options ("--index-url ..."), URLs, VCS refs, local paths
+# -- is rejected so plugin metadata cannot redirect pip to arbitrary sources.
+_REQUIREMENT_RE = re.compile(
+    r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?"
+    r"(?:\[[A-Za-z0-9._-]+(?:\s*,\s*[A-Za-z0-9._-]+)*\])?"
+    r"(?:\s*(?:===|==|!=|~=|<=|>=|<|>)\s*[A-Za-z0-9.*+!_-]+)*$"
+)
+
+
+def parse_frontmatter_requirements(requirements: str) -> list[str]:
+    """Split and validate a frontmatter ``requirements`` string.
+
+    Raises ``ValueError`` on any entry that is not a plain package requirement.
+    """
+    req_list = [req.strip() for req in requirements.split(",") if req.strip()]
+    for req in req_list:
+        if not _REQUIREMENT_RE.match(req):
+            raise ValueError(f"Unsupported requirement specifier: {req!r}")
+    return req_list
+
+
 def install_frontmatter_requirements(requirements: str):
     if requirements:
+        req_list = parse_frontmatter_requirements(requirements)
+        if not req_list:
+            log.info("No requirements found in frontmatter.")
+            return
         try:
-            req_list = [req.strip() for req in requirements.split(",")]
             log.info(f"Installing requirements: {' '.join(req_list)}")
             log.warning(
                 "SECURITY: Installing plugin requirements — packages=%s", req_list

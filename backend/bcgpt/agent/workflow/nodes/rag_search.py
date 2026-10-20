@@ -49,7 +49,13 @@ class RAGSearchHandler(NodeHandler):
         self, node: WorkflowNode, state: WorkflowState, context: ExecutionContext
     ) -> NodeResult:
         query = state.user_input
-        collection_ids = node.config.get("collection_ids") or []
+        from bcgpt.retrieval.lifecycle import filter_readable_collections
+
+        # Collection ids come from the workflow definition, which the invoking
+        # user may not own -- only search what *they* are allowed to read.
+        collection_ids = filter_readable_collections(
+            node.config.get("collection_ids") or [], context.user
+        )
         top_k = int(node.config.get("top_k", 5))
 
         if not query or not collection_ids or context.request is None:

@@ -224,11 +224,11 @@ class LdapConfigForm(BaseModel):
 def _is_trusted_proxy(request: Request) -> bool:
     """Return True when the direct peer IP is allowed to set trusted auth headers.
 
-    If no allowlist is configured the check is not enforced (relies on network
-    isolation; a startup warning is emitted elsewhere).
+    Fail-closed: with no allowlist configured no peer is trusted, so a header
+    sent straight to the backend port can never log anyone in.
     """
     if not BCGPT_AUTH_TRUSTED_PROXY_IPS:
-        return True
+        return False
     client_host = request.client.host if request.client else None
     if not client_host:
         return False
@@ -779,12 +779,16 @@ async def _signin_trusted_header(request: Request, response: Response):
 
 
 async def _signin_no_auth(request: Request, response: Response):
-    """Authenticate against the built-in admin account when auth is disabled."""
-    admin_email = "admin@localhost"
-    admin_password = "admin"
+    """Authenticate as the built-in admin account when auth is disabled.
 
-    if Users.get_user_by_email(admin_email.lower()):
-        return Auths.authenticate_user(admin_email.lower(), admin_password)
+    The account gets a random, never-disclosed password so it cannot be used for
+    a password sign-in if authentication is enabled later; in no-auth mode it is
+    selected by email alone.
+    """
+    admin_email = "admin@localhost"
+
+    if Users.get_user_by_email(admin_email):
+        return Auths.authenticate_user_by_trusted_header(admin_email)
 
     if Users.get_num_users() != 0:
         raise HTTPException(400, detail=ERROR_MESSAGES.EXISTING_USERS)
@@ -792,9 +796,9 @@ async def _signin_no_auth(request: Request, response: Response):
     await signup(
         request,
         response,
-        SignupForm(email=admin_email, password=admin_password, name="User"),
+        SignupForm(email=admin_email, password=uuid.uuid4().hex, name="User"),
     )
-    return Auths.authenticate_user(admin_email.lower(), admin_password)
+    return Auths.authenticate_user_by_trusted_header(admin_email)
 
 
 # ---------------------------------------------------------------------------

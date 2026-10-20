@@ -71,7 +71,6 @@ from bcgpt.utils.error_handlers import (
     http_exception_handler,
 )
 from bcgpt.utils.auth import (
-    get_license_data,
     decode_token,
     get_admin_user,
     get_verified_user,
@@ -205,7 +204,6 @@ from bcgpt.models import Functions, Models, Users, Chats, ChatGenerations
 from bcgpt.config import (
     AppConfig,
     reset_config,
-    LICENSE_KEY,
     # Audit
     AUDIT_LOG_LEVEL,
     AUDIT_EXCLUDED_PATHS,
@@ -1642,9 +1640,6 @@ async def lifespan(app: FastAPI):
             log.info("Applied security preset: %s", preset_str)
         except Exception as e:
             log.warning("Could not apply security preset '%s': %s", preset_str, e)
-
-    if LICENSE_KEY:
-        get_license_data(app, LICENSE_KEY)
 
     init_providers(app.state.config)
 

@@ -67,7 +67,7 @@ def resolve_effective_mcp_servers(
     PersistentConfig + per-user settings, both gated by MCP_ALLOWED_HOSTS.
     """
     from bcgpt import config as cfg
-    from bcgpt.mcpbridge.allowlist import is_host_allowed
+    from bcgpt.mcpbridge.allowlist import is_host_allowed, is_user_host_allowed
 
     if not getattr(cfg.ENABLE_MCP_SERVERS, "value", False):
         return []
@@ -78,7 +78,7 @@ def resolve_effective_mcp_servers(
             merged[s["id"]] = s
     ui = _user_settings_dict(user).get("ui", {}) or {}
     for s in ui.get("mcpServers") or []:
-        if s.get("enabled") and is_host_allowed(s.get("url", ""), allowed_hosts):
+        if s.get("enabled") and is_user_host_allowed(s.get("url", ""), allowed_hosts):
             merged.setdefault(s["id"], s)
     rows = list(merged.values())
     if server_ids is not None:

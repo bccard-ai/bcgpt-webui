@@ -126,7 +126,7 @@ def _openrouter_headers(url: str) -> dict[str, str]:
     if "openrouter.ai" not in url:
         return {}
     return {
-        "HTTP-Referer": "https://BCGPT.com/",
+        "HTTP-Referer": "https://github.com/bccard-ai/bcgpt-webui",
         "X-Title": "BCGPT",
     }
 
@@ -540,7 +540,9 @@ async def get_models(
             )
         except Exception as exc:
             log.exception("Unexpected error: %s", exc)
-            raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}")
+            raise HTTPException(
+                status_code=500, detail="BCGPT: Unexpected error while listing models"
+            )
 
     if user.role == "user" and not BYPASS_MODEL_ACCESS_CONTROL:
         models["data"] = await _filter_models_by_access(models, user)

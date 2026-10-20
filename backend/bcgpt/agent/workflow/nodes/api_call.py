@@ -22,7 +22,7 @@ import logging
 from typing import Any
 
 from bcgpt.agent.workflow.nodes.base import NodeHandler
-from bcgpt.retrieval.web.utils import validate_url
+from bcgpt.retrieval.web.utils import ssrf_safe_session, validate_url
 from bcgpt.utils.webhook import _is_webhook_url_safe
 from bcgpt.agent.workflow.state import (
     ExecutionContext,
@@ -63,8 +63,6 @@ class APICallHandler(NodeHandler):
         body = node.config.get("json")
         timeout = float(node.config.get("timeout", 30))
 
-        import aiohttp
-
         validate_url(url)
 
         if not _is_webhook_url_safe(url):
@@ -72,9 +70,8 @@ class APICallHandler(NodeHandler):
                 f"SSRF blocked: URL targets internal/private network: {url}"
             )
 
-        async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=timeout)
-        ) as session:
+        # Connect-time IP check as well: the host is resolved again on connect.
+        async with ssrf_safe_session(timeout=timeout, allow_private=False) as session:
             # SSRF: don't follow redirects — validate_url/_is_webhook_url_safe
             # above only checked the initial host, a 3xx could pivot internally.
             async with session.request(

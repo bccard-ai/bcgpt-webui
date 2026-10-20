@@ -88,9 +88,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        """Apply security headers after the downstream handler returns."""
+        """Apply security headers after the downstream handler returns.
+
+        Headers a route set itself (e.g. the sandboxed CSP on the HTML file
+        preview endpoint) are kept; the global defaults only fill gaps.
+        """
         response = await call_next(request)
-        response.headers.update(set_security_headers())
+        for name, value in set_security_headers().items():
+            if name not in response.headers:
+                response.headers[name] = value
         return response
 
 

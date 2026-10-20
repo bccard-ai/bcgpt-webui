@@ -784,13 +784,6 @@ CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
 
 
 # ===========================================================================
-# SECTION: License Key
-# ===========================================================================
-
-LICENSE_KEY = os.environ.get("LICENSE_KEY", "")
-
-
-# ===========================================================================
 # SECTION: Storage Provider
 # ===========================================================================
 
@@ -1259,7 +1252,8 @@ ENABLE_ADMIN_CHAT_ACCESS = _env_bool("ENABLE_ADMIN_CHAT_ACCESS", "True")
 ENABLE_COMMUNITY_SHARING = PersistentConfig(
     "ENABLE_COMMUNITY_SHARING",
     "ui.enable_community_sharing",
-    _env_bool("ENABLE_COMMUNITY_SHARING", "True"),
+    # Off by default: the community share target is not an operated BCGPT service.
+    _env_bool("ENABLE_COMMUNITY_SHARING", "False"),
 )
 
 ENABLE_MESSAGE_RATING = PersistentConfig(
