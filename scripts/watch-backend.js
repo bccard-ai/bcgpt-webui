@@ -153,10 +153,12 @@ function startBackend(restartCount) {
 		'bcgpt.main:app',
 		'--port',
 		'8090',
+		// Loopback by default: the vite dev server proxies /api here. Set
+		// BCGPT_DEV_HOST=0.0.0.0 to expose the dev backend on the network.
 		'--host',
-		'0.0.0.0',
+		process.env.BCGPT_DEV_HOST || '127.0.0.1',
 		'--forwarded-allow-ips',
-		'*',
+		process.env.FORWARDED_ALLOW_IPS || '127.0.0.1',
 		'--reload'
 	];
 

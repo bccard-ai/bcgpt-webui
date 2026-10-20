@@ -91,7 +91,9 @@ function initNetworkProxyFromEnv() {
 	const proxy = httpsProxy || allProxy || httpProxy;
 
 	if (proxy) {
-		process.stdout.write(`Network proxy "${proxy}" detected from env (Bun native support)\n`);
+		// Never echo credentials embedded in the proxy URL (CI logs are public).
+		const shown = proxy.replace(/\/\/.*@/, '//***@');
+		process.stdout.write(`Network proxy "${shown}" detected from env (Bun native support)\n`);
 	}
 }
 

@@ -124,11 +124,12 @@ docker compose -f docker-compose.without-ollama.yml up -d --build
 
 ### PostgreSQL 및 Redis
 
-`with-db` 프로필은 완전한 프로덕션 런북이 아닌 유용한 출발점입니다. 데이터베이스 비밀번호가 필요하며 보안 세션 쿠키를 구성합니다.
+`with-db` 프로필은 완전한 프로덕션 런북이 아닌 유용한 출발점입니다. 데이터베이스와 Redis 비밀번호가 필요하고, 앱 포트는 localhost에만 공개하며, 보안 세션 쿠키를 구성합니다.
 
 ```bash
 export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
 export POSTGRES_PASSWORD="replace-with-a-long-unique-password"
+export REDIS_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
 
 docker compose -f docker-compose.with-db.yml up -d --build
 curl --fail http://localhost:8090/readyz

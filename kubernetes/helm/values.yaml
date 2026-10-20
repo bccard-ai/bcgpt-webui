@@ -1,7 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/bcgpt/bcgpt
+  # Published by .github/workflows/docker.yml. For production, pin a release
+  # tag or digest instead of the moving `main` tag.
+  repository: ghcr.io/bccard-ai/bcgpt-webui
   tag: main
   pullPolicy: Always
 
@@ -128,6 +130,8 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 securityContext:
   allowPrivilegeEscalation: false
@@ -139,7 +143,10 @@ serviceAccount:
   create: true
   annotations: {}
   name: ""
+  # The app never talks to the Kubernetes API.
+  automountServiceAccountToken: false
 
-extraHosts:
-  - hostname: host.docker.internal
-    ip: host-gateway
+# Pod hostAliases, e.g. to reach a model server on a fixed IP:
+#  - ip: "10.0.0.10"
+#    hostnames: ["ollama.internal"]
+extraHosts: []

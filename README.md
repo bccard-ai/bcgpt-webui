@@ -124,11 +124,12 @@ docker compose -f docker-compose.without-ollama.yml up -d --build
 
 ### PostgreSQL and Redis
 
-The `with-db` profile is a useful starting point, not a complete production runbook. It requires a database password and configures secure session cookies:
+The `with-db` profile is a useful starting point, not a complete production runbook. It requires database and Redis passwords, publishes the app on localhost only, and configures secure session cookies:
 
 ```bash
 export BCGPT_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
 export POSTGRES_PASSWORD="replace-with-a-long-unique-password"
+export REDIS_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
 
 docker compose -f docker-compose.with-db.yml up -d --build
 curl --fail http://localhost:8090/readyz

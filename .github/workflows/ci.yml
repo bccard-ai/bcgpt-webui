@@ -6,13 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   # Frontend
   lint-frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       # Check-only in CI (the `--fix` in `bun run lint:frontend` is for the local pre-commit hook;
       # CI must never mutate). Still red on the pre-existing baseline — see PRODUCTION_READINESS_PLAN C/P0.
@@ -22,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run check
 
@@ -30,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run test:frontend
 
@@ -40,10 +43,10 @@ jobs:
     # Those jobs currently hard-fail on a large pre-existing baseline (eslint + svelte-check),
     # which previously caused this build job to be SKIPPED — meaning the production build was
     # never verified in CI. Until the baseline is ratcheted down (or those jobs are made
-    # non-blocking), the build must verify independently. See docs/PRODUCTION_HARDENING_LOG.md.
+    # non-blocking), the build must verify independently.
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run build
 
@@ -51,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       # Report-only Bun audit — aligns with the Bun-only lockfile strategy.
       # `npm audit` fails with ENOLOCK (no package-lock.json). Until the 5-high
@@ -94,7 +97,7 @@ jobs:
       - run: pylint backend/bcgpt/ --errors-only || true
       # Backend dependency CVE scan (complements the frontend `bun audit`). Non-blocking for now —
       # surfaces advisories in the CI log; flip off `|| true` to make it gate once the backlog is
-      # triaged. See docs/PRODUCTION_READINESS_PLAN.md (A/P2).
+      # triaged.
       - run: pip-audit -r backend/requirements.txt --desc || true
 
   test-backend:
@@ -109,6 +112,6 @@ jobs:
       # Standalone unit tests must pass (real gate — no Docker/Postgres needed).
       - run: cd backend && python -m pytest bcgpt/test/unit/ -v
       # Integration tests (AbstractPostgresTest) are WIP: import-layout + Docker
-      # harness still being fixed (see docs/PRODUCTION_HARDENING_LOG.md), so kept
+      # harness still being fixed, so kept
       # non-blocking until they collect cleanly.
       - run: cd backend && python -m pytest bcgpt/test/ -v --tb=short --ignore=bcgpt/test/unit || true

@@ -8,7 +8,9 @@ services:
       dockerfile: Dockerfile
     container_name: bcgpt
     ports:
-      - "8090:8090"
+      # Localhost only. To expose on the network, put a TLS reverse proxy in
+      # front instead of publishing this port on all interfaces.
+      - "127.0.0.1:8090:8090"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - BCGPT_SECRET_KEY=${BCGPT_SECRET_KEY:-}

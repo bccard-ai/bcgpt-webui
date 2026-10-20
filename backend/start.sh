@@ -46,7 +46,7 @@ if [ -n "$SPACE_ID" ]; then
   echo "Configuring for HuggingFace Space deployment"
   if [ -n "$ADMIN_USER_EMAIL" ] && [ -n "$ADMIN_USER_PASSWORD" ]; then
     echo "Admin user configured, creating"
-    BCGPT_SECRET_KEY="$BCGPT_SECRET_KEY" uvicorn bcgpt.main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '${FORWARDED_ALLOW_IPS:-127.0.0.1}' $([ -z "$DISABLE_UVLOOP" ] && echo "--loop uvloop --http httptools") &
+    BCGPT_SECRET_KEY="$BCGPT_SECRET_KEY" uvicorn bcgpt.main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-127.0.0.1}" $([ -z "$DISABLE_UVLOOP" ] && echo "--loop uvloop --http httptools") &
     app_pid=$!
     echo "Waiting for app to start..."
     while ! curl -s http://localhost:8090/health > /dev/null; do
@@ -65,4 +65,4 @@ if [ -n "$SPACE_ID" ]; then
   export BCGPT_URL=${SPACE_HOST}
 fi
 
-BCGPT_SECRET_KEY="$BCGPT_SECRET_KEY" exec uvicorn bcgpt.main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '${FORWARDED_ALLOW_IPS:-127.0.0.1}' $([ -z "$DISABLE_UVLOOP" ] && echo "--loop uvloop --http httptools")
+BCGPT_SECRET_KEY="$BCGPT_SECRET_KEY" exec uvicorn bcgpt.main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-127.0.0.1}" $([ -z "$DISABLE_UVLOOP" ] && echo "--loop uvloop --http httptools")

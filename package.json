@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"private": true,
 	"license": "Apache-2.0",
-	"author": "BC Card AI Team <seen@bccard.com>",
+	"author": "BC Card AI Team",
 	"homepage": "https://github.com/bccard-ai/bcgpt-webui",
 	"repository": {
 		"type": "git",
@@ -13,9 +13,9 @@
 		"url": "https://github.com/bccard-ai/bcgpt-webui/issues"
 	},
 	"scripts": {
-		"dev": "bun run pyodide:fetch && concurrently -n frontend,backend -c blue,green \"vite dev --host\" \"bun run dev:backend\"",
+		"dev": "bun run pyodide:fetch && concurrently -n frontend,backend -c blue,green \"vite dev\" \"bun run dev:backend\"",
 		"dev:backend": "bun scripts/watch-backend.js",
-		"dev:frontend": "bun run pyodide:fetch && vite dev --host",
+		"dev:frontend": "bun run pyodide:fetch && vite dev",
 		"dev:5050": "bun run pyodide:fetch && vite dev --port 5050",
 		"build": "bun run pyodide:fetch && vite build",
 		"preview": "vite preview",

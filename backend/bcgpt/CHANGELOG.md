@@ -13,10 +13,10 @@ BCGPT WebUI v1.0.0 consolidates all changes since the initial v1.0.0 release (20
 
 #### 🏢 Branding & Project Structure
 
-- 🔄 **BCGPT WebUI Rebranding**: Replaced all Open WebUI references with BCGPT — backend Python package (`open_webui` → `bcgpt`), CLI command (`bcgpt serve`), Docker image (`ghcr.io/bcgpt/bcgpt`), Redis key prefix (`bcgpt:config:*`), PWA manifest, favicon, meta tags, and splash screen fully customized
+- 🔄 **BCGPT WebUI Rebranding**: Replaced all Open WebUI references with BCGPT — backend Python package (`open_webui` → `bcgpt`), CLI command (`bcgpt serve`), Docker image (`ghcr.io/bccard-ai/bcgpt-webui`), Redis key prefix (`bcgpt:config:*`), PWA manifest, favicon, meta tags, and splash screen fully customized
 - 🎨 **BCGPT Custom Splash Screen**: Boot-log terminal-style splash screen with Korean/English bilingual error messages ("다시 시도 / Retry") and spinner animation
 - 🖼️ **BCGPT Custom Assets**: SVG favicon (BCGPT text logo), BCGPT brand logo, BC Card corporate logo, static assets (favicons, splash screens, provider icons)
-- 📦 **pip Package Distribution**: Install via `pip install bcgpt`
+- 📦 **pip Package Build**: Python package `bcgpt` buildable from source (`pip install .`); not published to PyPI
 
 #### 🔀 Svelte 5 Migration (310 Components)
 
@@ -210,7 +210,7 @@ Advanced — evidence-level processing:
 - 📦 **Backend Module**: Complete `open_webui` → `bcgpt` restructuring with new module hierarchy (`agent/`, `providers/`, `utils/`)
 - 💽 **Database Default**: SQLite → PostgreSQL (`DATABASE_URL=postgres://...`)
 - 🔍 **Vector DB Default**: ChromaDB → Qdrant
-- 🐳 **Docker Image**: `ghcr.io/open-webui/open-webui` → `ghcr.io/bcgpt/bcgpt`
+- 🐳 **Docker Image**: `ghcr.io/open-webui/open-webui` → `ghcr.io/bccard-ai/bcgpt-webui`
 - 🔑 **Redis Key Prefix**: `open-webui:*` → `bcgpt:config:*`
 - 🔒 **JWT Expiration Default**: `-1` (indefinite) → `7d`
 - 🔒 **Tracking Prevention Enabled by Default**: `SCARF_NO_ANALYTICS=true`, `DO_NOT_TRACK=true`, `ANONYMIZED_TELEMETRY=false`

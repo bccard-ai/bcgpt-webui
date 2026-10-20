@@ -9,11 +9,17 @@
 
 
 # CORS Preflight (OPTIONS) + Request (GET, POST, PATCH, PUT, DELETE)
+# Only the single origin in CORS_ALLOWED_ORIGIN (set it in the env file, e.g.
+# https://chat.example.com) is allowed. Never reflect arbitrary Origin headers
+# together with Access-Control-Allow-Credentials.
 (cors-api) {
-	@match-cors-api-preflight method OPTIONS
+	@match-cors-api-preflight {
+		method OPTIONS
+		header Origin {$CORS_ALLOWED_ORIGIN}
+	}
 	handle @match-cors-api-preflight {
 		header {
-			Access-Control-Allow-Origin "{http.request.header.origin}"
+			Access-Control-Allow-Origin "{$CORS_ALLOWED_ORIGIN}"
 			Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
 			Access-Control-Allow-Headers "Origin, Accept, Authorization, Content-Type, X-Requested-With"
 			Access-Control-Allow-Credentials "true"
@@ -24,14 +30,11 @@
 	}
 
 	@match-cors-api-request {
-		not {
-			header Origin "{http.request.scheme}://{http.request.host}"
-		}
-		header Origin "{http.request.header.origin}"
+		header Origin {$CORS_ALLOWED_ORIGIN}
 	}
 	handle @match-cors-api-request {
 		header {
-			Access-Control-Allow-Origin "{http.request.header.origin}"
+			Access-Control-Allow-Origin "{$CORS_ALLOWED_ORIGIN}"
 			Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
 			Access-Control-Allow-Headers "Origin, Accept, Authorization, Content-Type, X-Requested-With"
 			Access-Control-Allow-Credentials "true"
