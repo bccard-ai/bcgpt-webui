@@ -116,8 +116,6 @@ path = [
     "docs/**",
     "CHANGELOG.md",
     "INSTALLATION.md",
-    "ARTICLE.md",
-    "LICENSE_NOTICE_REVIEW.md",
     "README.md",
     "NOTICE",
 ]
@@ -126,7 +124,7 @@ SPDX-License-Identifier = "CC0-1.0"
 
 # Demo and misc root files
 [[annotations]]
-path = ["demo.png", "qr_generator.py", "stats.html"]
+path = ["demo.png", "qr_generator.py"]
 SPDX-FileCopyrightText = "2026 BC Card AI Team"
 SPDX-License-Identifier = "CC0-1.0"
 

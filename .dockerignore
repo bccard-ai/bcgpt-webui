@@ -23,3 +23,7 @@ backend/open_webui/
 .husky/
 cypress/
 stats.html
+.bcgpt_secret_key
+.webui_secret_key
+*.pem
+*.key

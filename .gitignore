@@ -303,6 +303,13 @@ cypress/screenshots
 .env.*
 !.env.example
 .webui_secret_key
+.bcgpt_secret_key
+*.pem
+*.key
+# Bundle analysis output and stale prebuilt SPA copies
+stats.html
+backend/bcgpt/static/_app/
+backend/bcgpt/static/index.html
 
 # Playwright MCP logs
 .playwright-mcp/

@@ -23,7 +23,7 @@
 		"csv_fields": "search_parameters.query,organic_results.position,organic_results.title,organic_results.url,organic_results.domain",
 		"query": "mcdonalds",
 		"action": "search",
-		"access_key": "aac48e007e15c532bb94ffb34532a4b2",
+		"access_key": "REDACTED",
 		"error": {}
 	},
 	"search_information": {

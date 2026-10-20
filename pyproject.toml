@@ -2,10 +2,10 @@
 name = "bcgpt"
 description = "BCGPT"
 authors = [
-    { name = "BC Card AI Team", email = "seen@bccard.com" },
+    { name = "BC Card AI Team" },
 ]
 maintainers = [
-    { name = "BC Card AI Team", email = "seen@bccard.com" },
+    { name = "BC Card AI Team" },
 ]
 license = { file = "LICENSE" }
 dependencies = [
